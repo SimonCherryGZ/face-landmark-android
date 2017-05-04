@@ -623,7 +623,7 @@ public class CameraConnectionFragment extends AExampleFragment {
             @Override
             public void onRotateChange(float x, float y, float z) {
                 if (mRenderer != null) {
-                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * x;
+                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * (x-170);
                     mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
                     mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
 
@@ -634,7 +634,7 @@ public class CameraConnectionFragment extends AExampleFragment {
                     ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
                             mGravity[2] * SENSITIVITY - z,
                             mGravity[1] * SENSITIVITY - y,
-                            0);
+                            (x-170) - mGravity[0] * SENSITIVITY);
                 }
             }
         });
