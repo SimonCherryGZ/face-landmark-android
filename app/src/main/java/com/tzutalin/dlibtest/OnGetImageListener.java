@@ -262,6 +262,11 @@ public class OnGetImageListener implements OnImageAvailableListener {
                                     int pointY = (int) (point.y * resizeRatio);
                                     canvas.drawCircle(pointX, pointY, 2, mFaceLandmardkPaint);
                                 }
+                                int width = landmarks.get(13).x - landmarks.get(1).x;
+                                Log.e("face width: ", String.valueOf(width));
+                                if (landMarkListener != null) {
+                                    landMarkListener.onWidthChange(width);
+                                }
 
                                 // add by simon at 2017/05/01 -- 描绘三维头部姿态
                                 ArrayList<Point> headPoses = ret.getPosePoints();
@@ -290,8 +295,8 @@ public class OnGetImageListener implements OnImageAvailableListener {
                                 ArrayList<Float> rotateList = ret.getRotate();
                                 if (rotateList != null && rotateList.size() >= 3) {
                                     Log.e("rotateList: ", rotateList.toString());
-                                    if (rotateListener != null) {
-                                        rotateListener.onRotateChange(rotateList.get(0), rotateList.get(1), rotateList.get(2));
+                                    if (landMarkListener != null) {
+                                        landMarkListener.onRotateChange(rotateList.get(0), rotateList.get(1), rotateList.get(2));
                                     }
                                 } else {
                                     Log.e("rotateList: ", "null");
@@ -310,13 +315,14 @@ public class OnGetImageListener implements OnImageAvailableListener {
         Trace.endSection();
     }
 
-    public interface RotateListener {
+    public interface LandMarkListener {
         void onRotateChange(float x, float y, float z);
+        void onWidthChange(int width);
     }
 
-    private RotateListener rotateListener;
+    private LandMarkListener landMarkListener;
 
-    public void setRotateListener(RotateListener rotateListener) {
-        this.rotateListener = rotateListener;
+    public void setLandMarkListener(LandMarkListener landMarkListener) {
+        this.landMarkListener = landMarkListener;
     }
 }

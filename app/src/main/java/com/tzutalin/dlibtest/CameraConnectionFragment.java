@@ -22,7 +22,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
@@ -619,11 +618,14 @@ public class CameraConnectionFragment extends AExampleFragment {
 
         Log.i(TAG, "Getting assets.");
         mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
-        mOnGetPreviewListener.setRotateListener(new OnGetImageListener.RotateListener() {
+        mOnGetPreviewListener.setLandMarkListener(new OnGetImageListener.LandMarkListener() {
             @Override
             public void onRotateChange(float x, float y, float z) {
                 if (mRenderer != null) {
-                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * (x-170);
+                    if (x < 0) {
+                        x += 180;
+                    }
+                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * (x-180);
                     mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
                     mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
 
@@ -634,8 +636,14 @@ public class CameraConnectionFragment extends AExampleFragment {
                     ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
                             mGravity[2] * SENSITIVITY - z,
                             mGravity[1] * SENSITIVITY - y,
-                            (x-170) - mGravity[0] * SENSITIVITY);
+                            (x-180) - mGravity[0] * SENSITIVITY);
                 }
+            }
+
+            @Override
+            public void onWidthChange(int width) {
+                double z = (125.0f/width) * 7;
+                ((AccelerometerRenderer) mRenderer).getCurrentCamera().setZ(z);
             }
         });
     }
@@ -770,6 +778,7 @@ public class CameraConnectionFragment extends AExampleFragment {
                 material.addTexture(envMap);
                 material.setColorInfluence(0);
                 mMonkey.setMaterial(material);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
