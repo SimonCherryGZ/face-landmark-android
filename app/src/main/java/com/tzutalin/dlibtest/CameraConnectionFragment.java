@@ -82,7 +82,7 @@ import hugo.weaving.DebugLog;
 public class CameraConnectionFragment extends AExampleFragment {
 
     private final float ALPHA = 0.8f;
-    private final int SENSITIVITY = 5;
+    private final int SENSITIVITY = 3;
     private float mGravity[] = new float[3];
 
     /**
@@ -627,10 +627,14 @@ public class CameraConnectionFragment extends AExampleFragment {
                     mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
                     mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
 
+//                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
+//                            z - mGravity[2] * SENSITIVITY,
+//                            y - mGravity[1] * SENSITIVITY,
+//                            x - mGravity[0] * SENSITIVITY);
                     ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
-                            x - mGravity[0] * SENSITIVITY,
+                            z - mGravity[2] * SENSITIVITY,
                             y - mGravity[1] * SENSITIVITY,
-                            z - mGravity[2] * SENSITIVITY);
+                            0);
                 }
             }
         });
