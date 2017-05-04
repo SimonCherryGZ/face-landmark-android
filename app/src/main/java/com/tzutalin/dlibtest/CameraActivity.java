@@ -22,13 +22,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 import android.widget.Toast;
 
 /**
  * Created by darrenl on 2016/5/20.
  */
-public class CameraActivity extends Activity {
+public class CameraActivity extends AppCompatActivity {
 
     private static int OVERLAY_PERMISSION_REQ_CODE = 1;
 
@@ -47,7 +48,7 @@ public class CameraActivity extends Activity {
         }
 
         if (null == savedInstanceState) {
-            getFragmentManager()
+            getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.container, CameraConnectionFragment.newInstance())
                     .commit();

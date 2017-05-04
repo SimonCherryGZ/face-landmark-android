@@ -44,6 +44,7 @@ import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Size;
@@ -56,6 +57,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.tzutalin.dlibtest.rajawali3d.AExampleFragment;
+
+import org.rajawali3d.Object3D;
+import org.rajawali3d.lights.DirectionalLight;
+import org.rajawali3d.loader.LoaderAWD;
+import org.rajawali3d.materials.Material;
+import org.rajawali3d.materials.methods.DiffuseMethod;
+import org.rajawali3d.materials.textures.CubeMapTexture;
+import org.rajawali3d.math.vector.Vector3;
+import org.rajawali3d.renderer.ISurfaceRenderer;
+import org.rajawali3d.view.SurfaceView;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,7 +79,11 @@ import java.util.concurrent.TimeUnit;
 
 import hugo.weaving.DebugLog;
 
-public class CameraConnectionFragment extends Fragment {
+public class CameraConnectionFragment extends AExampleFragment {
+
+    private final float ALPHA = 0.8f;
+    private final int SENSITIVITY = 5;
+    private float mGravity[] = new float[3];
 
     /**
      * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -286,7 +303,17 @@ public class CameraConnectionFragment extends Fragment {
     @Override
     public View onCreateView(
             final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.camera_connection_fragment, container, false);
+        //return inflater.inflate(R.layout.camera_connection_fragment, container, false);
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        ((View) mRenderSurface).bringToFront();
+
+        return mLayout;
+    }
+
+    @Override
+    protected int getLayoutId() {
+        return R.layout.camera_connection_fragment;
     }
 
     @Override
@@ -406,8 +433,8 @@ public class CameraConnectionFragment extends Fragment {
         } catch (final NullPointerException e) {
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
-            ErrorDialog.newInstance(getString(R.string.camera_error))
-                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
+//            ErrorDialog.newInstance(getString(R.string.camera_error))
+//                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
         }
     }
 
@@ -592,6 +619,21 @@ public class CameraConnectionFragment extends Fragment {
 
         Log.i(TAG, "Getting assets.");
         mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
+        mOnGetPreviewListener.setRotateListener(new OnGetImageListener.RotateListener() {
+            @Override
+            public void onRotateChange(float x, float y, float z) {
+                if (mRenderer != null) {
+                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * x;
+                    mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
+                    mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
+
+                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
+                            x - mGravity[0] * SENSITIVITY,
+                            y - mGravity[1] * SENSITIVITY,
+                            z - mGravity[2] * SENSITIVITY);
+                }
+            }
+        });
     }
 
     /**
@@ -670,5 +712,79 @@ public class CameraConnectionFragment extends Fragment {
                             })
                     .create();
         }
+    }
+
+    @Override
+    public ISurfaceRenderer createRenderer() {
+        return new AccelerometerRenderer(getActivity(), this);
+    }
+
+    @Override
+    protected void onBeforeApplyRenderer() {
+        ((SurfaceView) mRenderSurface).setTransparent(true);
+        super.onBeforeApplyRenderer();
+    }
+
+    private final class AccelerometerRenderer extends AExampleRenderer {
+        private DirectionalLight mLight;
+        private Object3D mMonkey;
+        private Vector3 mAccValues;
+
+        public AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
+            super(context, fragment);
+            mAccValues = new Vector3();
+        }
+
+        @Override
+        protected void initScene() {
+            try {
+                mLight = new DirectionalLight(0.1f, -1.0f, -1.0f);
+                mLight.setColor(1.0f, 1.0f, 1.0f);
+                mLight.setPower(1);
+                getCurrentScene().addLight(mLight);
+
+                final LoaderAWD parser = new LoaderAWD(mContext.getResources(), mTextureManager, R.raw.awd_suzanne);
+                parser.parse();
+
+                mMonkey = parser.getParsedObject();
+
+                getCurrentScene().addChild(mMonkey);
+
+                getCurrentCamera().setZ(7);
+
+                int[] resourceIds = new int[]{R.drawable.posx, R.drawable.negx,
+                        R.drawable.posy, R.drawable.negy, R.drawable.posz,
+                        R.drawable.negz};
+
+                Material material = new Material();
+                material.enableLighting(true);
+                material.setDiffuseMethod(new DiffuseMethod.Lambert());
+
+                CubeMapTexture envMap = new CubeMapTexture("environmentMap",
+                        resourceIds);
+                envMap.isEnvironmentTexture(true);
+                material.addTexture(envMap);
+                material.setColorInfluence(0);
+                mMonkey.setMaterial(material);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // -- set the background color to be transparent
+            // you need to have called setGLBackgroundTransparent(true); in the activity
+            // for this to work.
+            getCurrentScene().setBackgroundColor(0);
+        }
+
+        @Override
+        protected void onRender(long ellapsedRealtime, double deltaTime) {
+            super.onRender(ellapsedRealtime, deltaTime);
+            mMonkey.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
+        }
+
+        public void setAccelerometerValues(float x, float y, float z) {
+            mAccValues.setAll(-x, -y, -z);
+        }
+
     }
 }

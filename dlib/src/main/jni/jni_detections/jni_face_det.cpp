@@ -198,6 +198,31 @@ jobjectArray getDetectResult2(JNIEnv* env, DetectorPtr faceDetector, const int& 
           g_pJNI_VisionDetRet->addPosePoint(env, jDetRet, nose_end_point2D[1].x, nose_end_point2D[1].y);
           g_pJNI_VisionDetRet->addPosePoint(env, jDetRet, nose_end_point2D[2].x, nose_end_point2D[2].y);
           // add by simon at 2017/05/01 -- end
+
+          // add by simon at 2017/05/04 -- start
+            cv::Vec3d eav;
+            double rot[9] = {0};
+            cv::Mat rotM(3, 3, CV_64FC1, rot);
+            Rodrigues(rotation_vector, rotM);
+            double* _r = rotM.ptr<double>();
+
+            std::vector<double> tv(3);
+            tv[0]=0;tv[1]=0;tv[2]=1;
+
+            double _pm[12] = {_r[0],_r[1],_r[2],tv[0],
+                              _r[3],_r[4],_r[5],tv[1],
+                              _r[6],_r[7],_r[8],tv[2]};
+
+            cv::Mat tmp,tmp1,tmp2,tmp3,tmp4,tmp5;
+            cv::decomposeProjectionMatrix(cv::Mat(3,4,CV_64FC1,_pm),tmp,tmp1,tmp2,tmp3,tmp4,tmp5,eav);
+            LOG(INFO) << "eav[0]: " << eav[0];
+            LOG(INFO) << "eav[1]: " << eav[1];
+            LOG(INFO) << "eav[2]: " << eav[2];
+
+            g_pJNI_VisionDetRet->addRotate(env, jDetRet, (float)eav[0]);
+            g_pJNI_VisionDetRet->addRotate(env, jDetRet, (float)eav[1]);
+            g_pJNI_VisionDetRet->addRotate(env, jDetRet, (float)eav[2]);
+          // add by simon at 2017/05/04 -- start
       }
   }
   return jDetRetArray;

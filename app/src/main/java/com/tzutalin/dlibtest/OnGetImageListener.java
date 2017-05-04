@@ -241,8 +241,8 @@ public class OnGetImageListener implements OnImageAvailableListener {
                         synchronized (OnGetImageListener.this) {
                             results = mFaceDet.detect(mCroppedBitmap);
                         }
-                        long endTime = System.currentTimeMillis();
-                        mTransparentTitleView.setText("Time cost: " + String.valueOf((endTime - startTime) / 1000f) + " sec");
+//                        long endTime = System.currentTimeMillis();
+//                        mTransparentTitleView.setText("Time cost: " + String.valueOf((endTime - startTime) / 1000f) + " sec");
                         // Draw on bitmap
                         if (results != null) {
                             for (final VisionDetRet ret : results) {
@@ -285,8 +285,22 @@ public class OnGetImageListener implements OnImageAvailableListener {
                                 } else {
                                     Log.e("headPoses: ", "null");
                                 }
+
+                                // add by simon at 2017/05/04 -- 获取3轴旋转角度
+                                ArrayList<Float> rotateList = ret.getRotate();
+                                if (rotateList != null && rotateList.size() >= 3) {
+                                    Log.e("rotateList: ", rotateList.toString());
+                                    if (rotateListener != null) {
+                                        rotateListener.onRotateChange(rotateList.get(0), rotateList.get(1), rotateList.get(2));
+                                    }
+                                } else {
+                                    Log.e("rotateList: ", "null");
+                                }
                             }
                         }
+
+                        long endTime = System.currentTimeMillis();
+                        mTransparentTitleView.setText("Time cost: " + String.valueOf((endTime - startTime) / 1000f) + " sec");
 
                         mWindow.setRGBBitmap(mCroppedBitmap);
                         mIsComputing = false;
@@ -294,5 +308,15 @@ public class OnGetImageListener implements OnImageAvailableListener {
                 });
 
         Trace.endSection();
+    }
+
+    public interface RotateListener {
+        void onRotateChange(float x, float y, float z);
+    }
+
+    private RotateListener rotateListener;
+
+    public void setRotateListener(RotateListener rotateListener) {
+        this.rotateListener = rotateListener;
     }
 }

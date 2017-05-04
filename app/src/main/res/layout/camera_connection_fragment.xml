@@ -13,20 +13,38 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:surfaceview="http://schemas.android.com/apk/res-auto">
 
-    <com.tzutalin.dlibtest.AutoFitTextureView
-        android:id="@+id/texture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true" />
-    
-    <com.tzutalin.dlibtest.TrasparentTitleView
-        android:id="@+id/results"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="112dp"
-        android:layout_alignParentTop="true" />
+        android:layout_height="match_parent">
+
+        <com.tzutalin.dlibtest.AutoFitTextureView
+            android:id="@+id/texture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true" />
+
+        <com.tzutalin.dlibtest.TrasparentTitleView
+            android:id="@+id/results"
+            android:layout_width="match_parent"
+            android:layout_height="82dp"
+            android:layout_alignParentTop="true" />
+    </RelativeLayout>
+
+    <include
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        layout="@layout/relative_layout_loader_container" />
+
+    <org.rajawali3d.view.SurfaceView
+        android:id="@+id/rajwali_surface"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        surfaceview:frameRate="60.0"
+        surfaceview:renderMode="RENDER_WHEN_DIRTY"/>
         
-</RelativeLayout>
+</FrameLayout>

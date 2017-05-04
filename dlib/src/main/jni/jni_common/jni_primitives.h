@@ -118,6 +118,9 @@ class JNI_VisionDetRet {
       // add by simon at 2017/05/01
     jMethodID_addPosePoint =
           env->GetMethodID(detRetClass, "addPosePoint", "(II)Z");
+      // add by simon at 2017/05/04
+    jMethodID_addRotate =
+          env->GetMethodID(detRetClass, "addRotate", "(F)Z");
   }
 
   void setLabel(JNIEnv* env, jobject& jDetRet, const std::string& label) {
@@ -141,6 +144,11 @@ class JNI_VisionDetRet {
         env->CallBooleanMethod(jDetRet, jMethodID_addPosePoint, x, y);
     }
 
+    // add by simon at 2017/05/04
+    void addRotate(JNIEnv* env, jobject& jDetRet, const float& r) {
+        env->CallBooleanMethod(jDetRet, jMethodID_addRotate, r);
+    }
+
   static jobject createJObject(JNIEnv* env) {
     jclass detRetClass = env->FindClass(CLASSNAME_VISION_DET_RET);
     jmethodID mid =
@@ -162,5 +170,6 @@ class JNI_VisionDetRet {
   jfieldID jID_bottom;
   jmethodID jMethodID_addLandmark;
   jmethodID jMethodID_addPosePoint;  // add by simon at 2017/05/01
+  jmethodID jMethodID_addRotate;  // add by simon at 2017/05/04
 };
 #endif  // JNI_PRIMITIVES_H

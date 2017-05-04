@@ -26,7 +26,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.4'
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
     }
 }
 
@@ -38,6 +38,12 @@ repositories {
 apply plugin: 'com.neenbedankt.android-apt'
 def AAVersion = '4.0.0'
 
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile "com.android.support:appcompat-v7:${rootProject.ext.androidSupportSdkVersion}"
@@ -46,6 +52,7 @@ dependencies {
     compile project(':dlib')
     apt "org.androidannotations:androidannotations:$AAVersion"
     compile "org.androidannotations:androidannotations-api:$AAVersion"
+    compile(name:'rajawali-release', ext:'aar')
 
     // Add AndroidJUnit
     androidTestCompile "com.android.support:support-annotations:${rootProject.ext.androidSupportSdkVersion}"
