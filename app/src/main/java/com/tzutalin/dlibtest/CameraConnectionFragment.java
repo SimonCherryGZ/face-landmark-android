@@ -80,9 +80,9 @@ import hugo.weaving.DebugLog;
 
 public class CameraConnectionFragment extends AExampleFragment {
 
-    private final float ALPHA = 1f;
-    private final int SENSITIVITY = 4;
-    private float mGravity[] = new float[3];
+    private float lastX = 180.0f;
+    private float lastY = 0;
+    private float lastZ = 0;
 
     /**
      * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -622,28 +622,56 @@ public class CameraConnectionFragment extends AExampleFragment {
             @Override
             public void onRotateChange(float x, float y, float z) {
                 if (mRenderer != null) {
-                    if (x < 0) {
-                        x += 180;
-                    }
-                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * (x-180);
-                    mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
-                    mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
+//                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * x;
+//                    mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
+//                    mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
 
 //                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
 //                            z - mGravity[2] * SENSITIVITY,
 //                            y - mGravity[1] * SENSITIVITY,
 //                            x - mGravity[0] * SENSITIVITY);
-                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
-                            mGravity[2] * SENSITIVITY - z,
-                            mGravity[1] * SENSITIVITY - y,
-                            (x-180) - mGravity[0] * SENSITIVITY);
+
+                    boolean isJumpX = false;
+                    boolean isJumpY = false;
+                    boolean isJumpZ = false;
+                    float rotateX = x;
+                    float rotateY = y;
+                    float rotateZ = z;
+
+                    if (Math.abs(lastX-x) > 90) {
+                        Log.e("rotateException", "X 跳变");
+                        isJumpX = true;
+                        rotateX = lastX;
+                    }
+                    if (Math.abs(lastY-y) > 90) {
+                        Log.e("rotateException", "Y 跳变");
+                        isJumpY = true;
+                        rotateY = lastY;
+                    }
+                    if (Math.abs(lastZ-z) > 90) {
+                        Log.e("rotateException", "Z 跳变");
+                        isJumpZ = true;
+                        rotateZ = lastZ;
+                    }
+
+                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(-rotateZ, -rotateY, rotateX-180);
+
+                    if (!isJumpX) {
+                        lastX = x;
+                    }
+                    if (!isJumpY) {
+                        lastY = y;
+                    }
+                    if (!isJumpZ) {
+                        lastZ = z;
+                    }
                 }
             }
 
             @Override
             public void onWidthChange(int width) {
-                double z = (125.0f/width) * 7;
-                ((AccelerometerRenderer) mRenderer).getCurrentCamera().setZ(z);
+//                double z = (125.0f/width) * 7;
+//                ((AccelerometerRenderer) mRenderer).getCurrentCamera().setZ(z);
             }
         });
     }
