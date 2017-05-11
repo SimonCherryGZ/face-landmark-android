@@ -92,12 +92,33 @@ std::vector<cv::Point3d> get_3d_model_points()
 {
   std::vector<cv::Point3d> modelPoints;
 
-  modelPoints.push_back(cv::Point3d(0.0f, 0.0f, 0.0f)); //The first must be (0,0,0) while using POSIT
-  modelPoints.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));
-  modelPoints.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));
-  modelPoints.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));
-  modelPoints.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));
-  modelPoints.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));
+//  modelPoints.push_back(cv::Point3d(0.0f, 0.0f, 0.0f)); //The first must be (0,0,0) while using POSIT
+//  modelPoints.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));
+//  modelPoints.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));
+//  modelPoints.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));
+//  modelPoints.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));
+//  modelPoints.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));
+
+//    modelPoints.push_back(cv::Point3d(0.0f, 0.0f, 0.0f)); //The first must be (0,0,0) while using POSIT
+//    modelPoints.push_back(cv::Point3d(0.0f, 330.0f, 65.0f));
+//    modelPoints.push_back(cv::Point3d(-225.0f, -170.0f, 135.0f));
+//    modelPoints.push_back(cv::Point3d(225.0f, -170.0f, 135.0f));
+//    modelPoints.push_back(cv::Point3d(-150.0f, 150.0f, 125.0f));
+//    modelPoints.push_back(cv::Point3d(150.0f, 150.0f, 125.0f));
+
+//    modelPoints.push_back(cv::Point3d(36.6052f, 73.5674f, 51.415f)); //The first must be (0,0,0) while using POSIT
+//    modelPoints.push_back(cv::Point3d(36.1281f, 9.71114f, 32.0225f));
+//    modelPoints.push_back(cv::Point3d(-13.0008f, 108.756f, 11.7853f));
+//    modelPoints.push_back(cv::Point3d(85.0459f, 108.706f, 10.468f));
+//    modelPoints.push_back(cv::Point3d(14.8926f, 51.043f, 30.4165f));
+//    modelPoints.push_back(cv::Point3d(58.1999f, 50.8789f, 29.5954f));
+
+    modelPoints.push_back(cv::Point3d(1.10753f, -15.2893f, 68.137f)); //The first must be (0,0,0) while using POSIT
+    modelPoints.push_back(cv::Point3d(0.637927f, -75.9671f, 51.8616f));
+    modelPoints.push_back(cv::Point3d(-48.4752f, 23.0419f, 31.6016f));
+    modelPoints.push_back(cv::Point3d(49.6329f, 23.167f, 30.1738f));
+    modelPoints.push_back(cv::Point3d(-19.1493f, -34.4437f, 50.5215f));
+    modelPoints.push_back(cv::Point3d(20.2692f, -34.455f, 50.0247f));
 
   return modelPoints;
 
@@ -183,14 +204,29 @@ jobjectArray getDetectResult2(JNIEnv* env, DetectorPtr faceDetector, const int& 
           cv::Mat rotation_matrix;
           cv::Mat translation_vector;
 
+//          std::vector<double> tv(3);
+//          tv[0]=0; tv[1]=0; tv[2]=1;
+//          translation_vector = Mat(tv);
+
           cv::Mat dist_coeffs = cv::Mat::zeros(4,1,cv::DataType<double>::type);
           cv::solvePnP(model_points, image_points, camera_matrix, dist_coeffs, rotation_vector, translation_vector);
+          LOG(INFO) << "translation_vector: " << translation_vector;
+
+          g_pJNI_VisionDetRet->addTrans(env, jDetRet, (float)translation_vector.at<double>(0, 0));
+          g_pJNI_VisionDetRet->addTrans(env, jDetRet, (float)translation_vector.at<double>(1, 0));
+          g_pJNI_VisionDetRet->addTrans(env, jDetRet, (float)translation_vector.at<double>(2, 0));
+//            g_pJNI_VisionDetRet->addTrans(env, jDetRet, (float)tv[0]);
+//            g_pJNI_VisionDetRet->addTrans(env, jDetRet, (float)tv[1]);
+//            g_pJNI_VisionDetRet->addTrans(env, jDetRet, (float)tv[2]);
 
           std::vector<cv::Point3d> nose_end_point3D;
           std::vector<cv::Point2d> nose_end_point2D;
-          nose_end_point3D.push_back(cv::Point3d(0, 0, 400.0));
-          nose_end_point3D.push_back(cv::Point3d(0, 400.0, 0));
-          nose_end_point3D.push_back(cv::Point3d(400.0, 0, 0));
+//          nose_end_point3D.push_back(cv::Point3d(0, 0, -400.0));
+//          nose_end_point3D.push_back(cv::Point3d(0, -400.0, 0));
+//          nose_end_point3D.push_back(cv::Point3d(400.0, 0, 0));
+          nose_end_point3D.push_back(cv::Point3d(1.10753f, -15.2893f, 468.137f));  // cv::Point3d(1.10753f, -15.2893f, 68.137f);
+          nose_end_point3D.push_back(cv::Point3d(1.10753f, 384.7107f, 68.137f));
+          nose_end_point3D.push_back(cv::Point3d(401.10753f, -15.2893f, 68.137f));
 
           cv::projectPoints(nose_end_point3D, rotation_vector, translation_vector, camera_matrix, dist_coeffs, nose_end_point2D);
 
@@ -222,7 +258,25 @@ jobjectArray getDetectResult2(JNIEnv* env, DetectorPtr faceDetector, const int& 
             g_pJNI_VisionDetRet->addRotate(env, jDetRet, (float)eav[0]);
             g_pJNI_VisionDetRet->addRotate(env, jDetRet, (float)eav[1]);
             g_pJNI_VisionDetRet->addRotate(env, jDetRet, (float)eav[2]);
-          // add by simon at 2017/05/04 -- start
+            // add by simon at 2017/05/04 -- start
+
+//            rotM = rotM.t();// transpose to conform with majorness of opengl matrix
+//            double _d[16] = {	 rot[0],rot[1],rot[2],0,
+//                                 rot[3],rot[4],rot[5],0,
+//                                 rot[6],rot[7],rot[8],0,
+//                                 0,	   0,	  0	,     1};
+//
+////            double tr[] = {translation_vector.at<double >(0, 0),
+////                            translation_vector.at<double >(1, 0),
+////                            translation_vector.at<double >(2, 0)} ;
+////            double _d[16] = {	  rot[0],rot[3],rot[6], 0,
+////                                  rot[1],rot[4],rot[7], 0,
+////                                  rot[2],rot[5],rot[8], 0,
+////                                   tr[0], -tr[1], -tr[2],1};
+//      ;
+//            for (int i=0; i<16; i++) {
+//                g_pJNI_VisionDetRet->addRotation(env, jDetRet, _d[i]);
+//            }
       }
   }
   return jDetRetArray;

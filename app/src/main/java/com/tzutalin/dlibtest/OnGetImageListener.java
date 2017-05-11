@@ -262,11 +262,6 @@ public class OnGetImageListener implements OnImageAvailableListener {
                                     int pointY = (int) (point.y * resizeRatio);
                                     canvas.drawCircle(pointX, pointY, 2, mFaceLandmardkPaint);
                                 }
-                                int width = landmarks.get(13).x - landmarks.get(1).x;
-                                Log.e("face width: ", String.valueOf(width));
-                                if (landMarkListener != null) {
-                                    landMarkListener.onWidthChange(width);
-                                }
 
                                 // add by simon at 2017/05/01 -- 描绘三维头部姿态
                                 ArrayList<Point> headPoses = ret.getPosePoints();
@@ -301,6 +296,27 @@ public class OnGetImageListener implements OnImageAvailableListener {
                                 } else {
                                     Log.e("rotateList: ", "null");
                                 }
+
+                                // add by simon at 2017/05/07
+                                ArrayList<Float> transList = ret.getTrans();
+                                if (transList != null && transList.size() >= 3) {
+                                    Log.e("transList: ", transList.toString());
+                                    if (landMarkListener != null) {
+                                        landMarkListener.onTransChange(transList.get(0), transList.get(1), transList.get(2));
+                                    }
+                                } else {
+                                    Log.e("transList: ", "null");
+                                }
+
+//                                ArrayList<Double> rotationList = ret.getRotation();
+//                                if (rotationList != null && rotationList.size() >= 16) {
+//                                    Log.e("rotationList: ", rotationList.toString());
+//                                    if (landMarkListener != null) {
+//                                        landMarkListener.onRotationChange(rotationList);
+//                                    }
+//                                } else {
+//                                    Log.e("rotationList: ", "null");
+//                                }
                             }
                         }
 
@@ -317,7 +333,8 @@ public class OnGetImageListener implements OnImageAvailableListener {
 
     public interface LandMarkListener {
         void onRotateChange(float x, float y, float z);
-        void onWidthChange(int width);
+        void onTransChange(float x, float y, float z);
+        void onRotationChange(ArrayList<Double> rotationList);
     }
 
     private LandMarkListener landMarkListener;

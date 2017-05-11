@@ -21,7 +21,6 @@ package com.tzutalin.dlib;
  */
 
 import android.graphics.Point;
-import android.graphics.PointF;
 
 import java.util.ArrayList;
 
@@ -40,6 +39,9 @@ public final class VisionDetRet {
     private ArrayList<Point> mPosePoints = new ArrayList<>();
     // TODO add by simon at 2017/05/04
     private ArrayList<Float> mRotate = new ArrayList<>();
+    // TODO add by simon at 2017/05/07
+    private ArrayList<Float> mTrans = new ArrayList<>();
+    private ArrayList<Double> mRotation = new ArrayList<>();
 
     VisionDetRet() {
     }
@@ -135,6 +137,22 @@ public final class VisionDetRet {
 
     public ArrayList<Float> getRotate() {
         return mRotate;
+    }
+
+    public boolean addTrans(float t) {
+        return mTrans.add(t);
+    }
+
+    public ArrayList<Float> getTrans() {
+        return mTrans;
+    }
+
+    public boolean addRotation(double d) {
+        return mRotation.add(d);
+    }
+
+    public ArrayList<Double> getRotation() {
+        return mRotation;
     }
 
     @Override

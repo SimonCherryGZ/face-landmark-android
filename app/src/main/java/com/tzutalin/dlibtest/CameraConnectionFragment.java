@@ -64,6 +64,8 @@ import org.rajawali3d.loader.LoaderAWD;
 import org.rajawali3d.materials.Material;
 import org.rajawali3d.materials.methods.DiffuseMethod;
 import org.rajawali3d.materials.textures.CubeMapTexture;
+import org.rajawali3d.math.Matrix4;
+import org.rajawali3d.math.Quaternion;
 import org.rajawali3d.math.vector.Vector3;
 import org.rajawali3d.renderer.ISurfaceRenderer;
 import org.rajawali3d.view.SurfaceView;
@@ -80,9 +82,12 @@ import hugo.weaving.DebugLog;
 
 public class CameraConnectionFragment extends AExampleFragment {
 
-    private float lastX = 180.0f;
+    private float lastX = 0;
     private float lastY = 0;
     private float lastZ = 0;
+
+    private Vector3 mCameraOffset = new Vector3();
+    private Quaternion mQuaternion = new Quaternion();
 
     /**
      * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -654,7 +659,7 @@ public class CameraConnectionFragment extends AExampleFragment {
                         rotateZ = lastZ;
                     }
 
-                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(-rotateZ, -rotateY, rotateX-180);
+                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(rotateZ, rotateY, -rotateX);
 
                     if (!isJumpX) {
                         lastX = x;
@@ -669,9 +674,28 @@ public class CameraConnectionFragment extends AExampleFragment {
             }
 
             @Override
-            public void onWidthChange(int width) {
-//                double z = (125.0f/width) * 7;
-//                ((AccelerometerRenderer) mRenderer).getCurrentCamera().setZ(z);
+            public void onTransChange(float x, float y, float z) {
+//                mCameraOffset.setAll(x, y, z);
+                AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
+//                ((ChaseCamera) renderer.getCurrentCamera()).setCameraOffset(mCameraOffset);
+
+                renderer.getCurrentCamera().setPosition(-x/20, y/20, z/20);
+//                renderer.getCurrentCamera().setPosition(-x/20, y/100, 10);
+            }
+
+            @Override
+            public void onRotationChange(ArrayList<Double> rotationList) {
+                if (rotationList != null && rotationList.size() >= 16) {
+                    Double[] mArray = rotationList.toArray(new Double[16]);
+                    double[] mHeadViewMatrix = new double[16];
+                    for (int i=0; i<16; i++) {
+                        mHeadViewMatrix[i] = mArray[i];
+                    }
+                    Log.e("mHeadViewMatrix: ", Arrays.toString(mHeadViewMatrix));
+                    Matrix4 mHeadViewMatrix4 = new Matrix4(mHeadViewMatrix);
+                    mQuaternion.fromMatrix(mHeadViewMatrix4);
+                    ((AccelerometerRenderer) mRenderer).mMonkey.rotate(mQuaternion);
+                }
             }
         });
     }
@@ -783,11 +807,11 @@ public class CameraConnectionFragment extends AExampleFragment {
                 mLight.setPower(1);
                 getCurrentScene().addLight(mLight);
 
-                final LoaderAWD parser = new LoaderAWD(mContext.getResources(), mTextureManager, R.raw.awd_suzanne);
+                final LoaderAWD parser = new LoaderAWD(mContext.getResources(), mTextureManager, R.raw.head_object_new);
                 parser.parse();
-
                 mMonkey = parser.getParsedObject();
-
+                mMonkey.setScale(.03f);
+                mMonkey.setPosition(0, 0, 0);
                 getCurrentScene().addChild(mMonkey);
 
                 getCurrentCamera().setZ(7);
@@ -815,6 +839,16 @@ public class CameraConnectionFragment extends AExampleFragment {
             // you need to have called setGLBackgroundTransparent(true); in the activity
             // for this to work.
             getCurrentScene().setBackgroundColor(0);
+
+//            // -- create a chase camera
+//            // the first parameter is the camera offset
+//            // the second parameter is the interpolation factor
+//            ChaseCamera chaseCamera = new ChaseCamera(new Vector3(0, 3, 16));
+//            // -- tell the camera which object to chase
+//            chaseCamera.setLinkedObject(mMonkey);
+//            // -- set the far plane to 1000 so that we actually see the sky sphere
+//            chaseCamera.setFarPlane(1000);
+//            getCurrentScene().replaceAndSwitchCamera(chaseCamera, 0);
         }
 
         @Override
@@ -823,9 +857,8 @@ public class CameraConnectionFragment extends AExampleFragment {
             mMonkey.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
         }
 
-        public void setAccelerometerValues(float x, float y, float z) {
-            mAccValues.setAll(-x, -y, -z);
+        void setAccelerometerValues(float x, float y, float z) {
+            mAccValues.setAll(x, y, z);
         }
-
     }
 }
