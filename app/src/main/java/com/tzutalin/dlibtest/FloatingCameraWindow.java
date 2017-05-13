@@ -77,8 +77,16 @@ public class FloatingCameraWindow {
         mWindowWidth = mScreenMaxWidth / 2;
         mWindowHeight = mScreenMaxHeight / 2;
 
-        mWindowWidth = mWindowWidth > 0 && mWindowWidth < mScreenMaxWidth ? mWindowWidth : mScreenMaxWidth;
-        mWindowHeight = mWindowHeight > 0 && mWindowHeight < mScreenMaxHeight ? mWindowHeight : mScreenMaxHeight;
+//        float ratio = (float) mScreenMaxHeight / mScreenMaxWidth;
+//        mWindowHeight = (int) (mWindowWidth * ratio);
+//
+//        mWindowWidth = mWindowWidth > 0 && mWindowWidth < mScreenMaxWidth ? mWindowWidth : mScreenMaxWidth;
+//        mWindowHeight = mWindowHeight > 0 && mWindowHeight < mScreenMaxHeight ? mWindowHeight : mScreenMaxHeight;
+
+        mWindowWidth = 540;
+        mWindowHeight = 810;
+        Log.e("FloatingCameraWindow", "mWindowWidth: " + mWindowWidth);
+        Log.e("FloatingCameraWindow", "mWindowHeight: " + mWindowHeight);
     }
 
     public FloatingCameraWindow(Context context, int windowWidth, int windowHeight) {
@@ -142,6 +150,7 @@ public class FloatingCameraWindow {
         mWindowParam.y = 0;
         mWindowParam.width = mWindowWidth;
         mWindowParam.height = mWindowHeight;
+
         return mWindowParam;
     }
 
@@ -222,6 +231,7 @@ public class FloatingCameraWindow {
 
             mColorView.getLayoutParams().width = colorMaxWidth;
             mColorView.getLayoutParams().height = colorMaxHeight;
+            mColorView.setScaleType(ImageView.ScaleType.FIT_XY);
         }
 
         @Override
@@ -287,4 +297,15 @@ public class FloatingCameraWindow {
         }
     }
 
+    public boolean isWindowVisible() {
+        return mRootView.getVisibility() == View.VISIBLE;
+    }
+
+    public void setWindowVisible(boolean isVisible) {
+        if (isVisible) {
+            mRootView.setVisibility(View.VISIBLE);
+        } else {
+            mRootView.setVisibility(View.INVISIBLE);
+        }
+    }
 }

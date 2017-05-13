@@ -42,7 +42,7 @@ public class TrasparentTitleView extends View {
         mFgPaint.setTextSize(mTextSizePx);
 
         mBgPaint = new Paint();
-        mBgPaint.setColor(0xcc4285f4);
+        mBgPaint.setColor(0xa04285f4);
     }
 
     @NonNull

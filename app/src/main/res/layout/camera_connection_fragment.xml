@@ -31,7 +31,7 @@
         <com.tzutalin.dlibtest.TrasparentTitleView
             android:id="@+id/results"
             android:layout_width="match_parent"
-            android:layout_height="82dp"
+            android:layout_height="70dp"
             android:layout_alignParentTop="true" />
     </RelativeLayout>
 
@@ -46,5 +46,32 @@
         android:layout_height="fill_parent"
         surfaceview:frameRate="60.0"
         surfaceview:renderMode="RENDER_WHEN_DIRTY"/>
-        
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:layout_gravity="bottom">
+
+        <Button
+            android:id="@+id/btn_view_crop"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="隐藏缩略图"/>
+
+        <Button
+            android:id="@+id/btn_view_model"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="隐藏3d模型"/>
+
+        <Button
+            android:id="@+id/btn_model_alpha"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="改变透明度"/>
+    </LinearLayout>
 </FrameLayout>

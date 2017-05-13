@@ -99,26 +99,19 @@ std::vector<cv::Point3d> get_3d_model_points()
 //  modelPoints.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));
 //  modelPoints.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));
 
-//    modelPoints.push_back(cv::Point3d(0.0f, 0.0f, 0.0f)); //The first must be (0,0,0) while using POSIT
-//    modelPoints.push_back(cv::Point3d(0.0f, 330.0f, 65.0f));
-//    modelPoints.push_back(cv::Point3d(-225.0f, -170.0f, 135.0f));
-//    modelPoints.push_back(cv::Point3d(225.0f, -170.0f, 135.0f));
-//    modelPoints.push_back(cv::Point3d(-150.0f, 150.0f, 125.0f));
-//    modelPoints.push_back(cv::Point3d(150.0f, 150.0f, 125.0f));
+//    modelPoints.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));                // Nose tip
+//    modelPoints.push_back(cv::Point3d(0.0f, 330.0f, 65.0f));             // Chin
+//    modelPoints.push_back(cv::Point3d(-225.0f, -170.0f, 135.0f));        // Left eye left corner
+//    modelPoints.push_back(cv::Point3d(225.0f, -170.0f, 135.0f));         // Right eye right corner
+//    modelPoints.push_back(cv::Point3d(-150.0f, 150.0f, 125.0f));         // Left Mouth corner
+//    modelPoints.push_back(cv::Point3d(150.0f, 150.0f, 125.0f));          // Right mouth corner
 
-//    modelPoints.push_back(cv::Point3d(36.6052f, 73.5674f, 51.415f)); //The first must be (0,0,0) while using POSIT
-//    modelPoints.push_back(cv::Point3d(36.1281f, 9.71114f, 32.0225f));
-//    modelPoints.push_back(cv::Point3d(-13.0008f, 108.756f, 11.7853f));
-//    modelPoints.push_back(cv::Point3d(85.0459f, 108.706f, 10.468f));
-//    modelPoints.push_back(cv::Point3d(14.8926f, 51.043f, 30.4165f));
-//    modelPoints.push_back(cv::Point3d(58.1999f, 50.8789f, 29.5954f));
-
-    modelPoints.push_back(cv::Point3d(1.10753f, -15.2893f, 68.137f)); //The first must be (0,0,0) while using POSIT
-    modelPoints.push_back(cv::Point3d(0.637927f, -75.9671f, 51.8616f));
-    modelPoints.push_back(cv::Point3d(-48.4752f, 23.0419f, 31.6016f));
-    modelPoints.push_back(cv::Point3d(49.6329f, 23.167f, 30.1738f));
-    modelPoints.push_back(cv::Point3d(-19.1493f, -34.4437f, 50.5215f));
-    modelPoints.push_back(cv::Point3d(20.2692f, -34.455f, 50.0247f));
+    modelPoints.push_back(cv::Point3d(1.10753f, 15.2893f, -68.137f));
+    modelPoints.push_back(cv::Point3d(0.637927f, 75.9671f, -51.8616f));
+    modelPoints.push_back(cv::Point3d(-48.4752f, -23.0419f, -31.6016f));
+    modelPoints.push_back(cv::Point3d(49.6329f, -23.167f, -30.1738f));
+    modelPoints.push_back(cv::Point3d(-19.1493f, 34.4437f, -50.5215f));
+    modelPoints.push_back(cv::Point3d(20.2692f, 34.455f, -50.0247f));
 
   return modelPoints;
 
@@ -224,9 +217,9 @@ jobjectArray getDetectResult2(JNIEnv* env, DetectorPtr faceDetector, const int& 
 //          nose_end_point3D.push_back(cv::Point3d(0, 0, -400.0));
 //          nose_end_point3D.push_back(cv::Point3d(0, -400.0, 0));
 //          nose_end_point3D.push_back(cv::Point3d(400.0, 0, 0));
-          nose_end_point3D.push_back(cv::Point3d(1.10753f, -15.2893f, 468.137f));  // cv::Point3d(1.10753f, -15.2893f, 68.137f);
-          nose_end_point3D.push_back(cv::Point3d(1.10753f, 384.7107f, 68.137f));
-          nose_end_point3D.push_back(cv::Point3d(401.10753f, -15.2893f, 68.137f));
+          nose_end_point3D.push_back(cv::Point3d(1.10753f, 15.2893f, -468.137f));  // cv::Point3d(1.10753f, 15.2893f, -68.137f)
+          nose_end_point3D.push_back(cv::Point3d(1.10753f, -384.7107f, -68.137f));
+          nose_end_point3D.push_back(cv::Point3d(401.10753f, 15.2893f, -68.137f));
 
           cv::projectPoints(nose_end_point3D, rotation_vector, translation_vector, camera_matrix, dist_coeffs, nose_end_point2D);
 

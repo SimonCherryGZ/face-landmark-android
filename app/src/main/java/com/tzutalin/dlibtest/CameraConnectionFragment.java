@@ -54,6 +54,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.tzutalin.dlibtest.rajawali3d.AExampleFragment;
@@ -88,6 +89,8 @@ public class CameraConnectionFragment extends AExampleFragment {
 
     private Vector3 mCameraOffset = new Vector3();
     private Quaternion mQuaternion = new Quaternion();
+
+    private int mMonkeyAlpha = 255;
 
     /**
      * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -310,7 +313,7 @@ public class CameraConnectionFragment extends AExampleFragment {
         //return inflater.inflate(R.layout.camera_connection_fragment, container, false);
         super.onCreateView(inflater, container, savedInstanceState);
 
-        ((View) mRenderSurface).bringToFront();
+        //((View) mRenderSurface).bringToFront();
 
         return mLayout;
     }
@@ -324,6 +327,46 @@ public class CameraConnectionFragment extends AExampleFragment {
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
         textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
+
+        Button btnViewCrop = (Button) view.findViewById(R.id.btn_view_crop);
+        Button btnViewModel = (Button) view.findViewById(R.id.btn_view_model);
+        Button btnModelAlpha = (Button) view.findViewById(R.id.btn_model_alpha);
+
+        btnViewCrop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mOnGetPreviewListener.isWindowVisible()) {
+                    mOnGetPreviewListener.setWindowVisible(false);
+                } else {
+                    mOnGetPreviewListener.setWindowVisible(true);
+                }
+            }
+        });
+
+        btnViewModel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
+                if (renderer.mMonkey.isVisible()) {
+                    renderer.mMonkey.setVisible(false);
+                } else {
+                    renderer.mMonkey.setVisible(true);
+                }
+            }
+        });
+
+        btnModelAlpha.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mMonkeyAlpha == 255) {
+                    mMonkeyAlpha = 127;
+                } else {
+                    mMonkeyAlpha = 255;
+                }
+                AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
+                renderer.mMonkey.setAlpha(mMonkeyAlpha);
+            }
+        });
     }
 
     @Override
@@ -627,15 +670,6 @@ public class CameraConnectionFragment extends AExampleFragment {
             @Override
             public void onRotateChange(float x, float y, float z) {
                 if (mRenderer != null) {
-//                    mGravity[0] = ALPHA * mGravity[0] + (1 - ALPHA) * x;
-//                    mGravity[1] = ALPHA * mGravity[1] + (1 - ALPHA) * y;
-//                    mGravity[2] = ALPHA * mGravity[2] + (1 - ALPHA) * z;
-
-//                    ((AccelerometerRenderer) mRenderer).setAccelerometerValues(
-//                            z - mGravity[2] * SENSITIVITY,
-//                            y - mGravity[1] * SENSITIVITY,
-//                            x - mGravity[0] * SENSITIVITY);
-
                     boolean isJumpX = false;
                     boolean isJumpY = false;
                     boolean isJumpZ = false;
@@ -675,12 +709,8 @@ public class CameraConnectionFragment extends AExampleFragment {
 
             @Override
             public void onTransChange(float x, float y, float z) {
-//                mCameraOffset.setAll(x, y, z);
                 AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
-//                ((ChaseCamera) renderer.getCurrentCamera()).setCameraOffset(mCameraOffset);
-
                 renderer.getCurrentCamera().setPosition(-x/20, y/20, z/20);
-//                renderer.getCurrentCamera().setPosition(-x/20, y/100, 10);
             }
 
             @Override
@@ -814,7 +844,7 @@ public class CameraConnectionFragment extends AExampleFragment {
                 mMonkey.setPosition(0, 0, 0);
                 getCurrentScene().addChild(mMonkey);
 
-                getCurrentCamera().setZ(7);
+                getCurrentCamera().setZ(20);
 
                 int[] resourceIds = new int[]{R.drawable.posx, R.drawable.negx,
                         R.drawable.posy, R.drawable.negy, R.drawable.posz,
@@ -839,16 +869,6 @@ public class CameraConnectionFragment extends AExampleFragment {
             // you need to have called setGLBackgroundTransparent(true); in the activity
             // for this to work.
             getCurrentScene().setBackgroundColor(0);
-
-//            // -- create a chase camera
-//            // the first parameter is the camera offset
-//            // the second parameter is the interpolation factor
-//            ChaseCamera chaseCamera = new ChaseCamera(new Vector3(0, 3, 16));
-//            // -- tell the camera which object to chase
-//            chaseCamera.setLinkedObject(mMonkey);
-//            // -- set the far plane to 1000 so that we actually see the sky sphere
-//            chaseCamera.setFarPlane(1000);
-//            getCurrentScene().replaceAndSwitchCamera(chaseCamera, 0);
         }
 
         @Override

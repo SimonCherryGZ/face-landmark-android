@@ -18,7 +18,6 @@ package com.tzutalin.dlibtest;
 
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -34,14 +33,10 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Handler;
 import android.os.Trace;
 import android.util.Log;
-import android.view.Display;
-import android.view.WindowManager;
 
 import com.tzutalin.dlib.Constants;
 import com.tzutalin.dlib.FaceDet;
 import com.tzutalin.dlib.VisionDetRet;
-
-import junit.framework.Assert;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -106,41 +101,11 @@ public class OnGetImageListener implements OnImageAvailableListener {
     }
 
     private void drawResizedBitmap(final Bitmap src, final Bitmap dst) {
-
-        Display getOrient = ((WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        int orientation = Configuration.ORIENTATION_UNDEFINED;
-        Point point = new Point();
-        getOrient.getSize(point);
-        int screen_width = point.x;
-        int screen_height = point.y;
-        Log.d(TAG, String.format("screen size (%d,%d)", screen_width, screen_height));
-        if (screen_width < screen_height) {
-            orientation = Configuration.ORIENTATION_PORTRAIT;
-            mScreenRotation = 90;
-        } else {
-            orientation = Configuration.ORIENTATION_LANDSCAPE;
-            mScreenRotation = 0;
-        }
-
-        Assert.assertEquals(dst.getWidth(), dst.getHeight());
-        final float minDim = Math.min(src.getWidth(), src.getHeight());
-
         final Matrix matrix = new Matrix();
 
-        // We only want the center square out of the original rectangle.
-        final float translateX = -Math.max(0, (src.getWidth() - minDim) / 2);
-        final float translateY = -Math.max(0, (src.getHeight() - minDim) / 2);
-        matrix.preTranslate(translateX, translateY);
-
-        final float scaleFactor = dst.getHeight() / minDim;
-        matrix.postScale(scaleFactor, scaleFactor);
-
-        // Rotate around the center if necessary.
-        if (mScreenRotation != 0) {
-            matrix.postTranslate(-dst.getWidth() / 2.0f, -dst.getHeight() / 2.0f);
-            matrix.postRotate(mScreenRotation);
-            matrix.postTranslate(dst.getWidth() / 2.0f, dst.getHeight() / 2.0f);
-        }
+        final float scaleFactorW = (float) dst.getWidth() / src.getWidth();
+        final float scaleFactorH = (float) dst.getHeight() / src.getHeight();
+        matrix.postScale(scaleFactorW, scaleFactorH);
 
         final Canvas canvas = new Canvas(dst);
         canvas.drawBitmap(src, matrix, null);
@@ -175,7 +140,12 @@ public class OnGetImageListener implements OnImageAvailableListener {
                 Log.d(TAG, String.format("Initializing at size %dx%d", mPreviewWdith, mPreviewHeight));
                 mRGBBytes = new int[mPreviewWdith * mPreviewHeight];
                 mRGBframeBitmap = Bitmap.createBitmap(mPreviewWdith, mPreviewHeight, Config.ARGB_8888);
-                mCroppedBitmap = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Config.ARGB_8888);
+//                mCroppedBitmap = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Config.ARGB_8888);
+
+                float ratio = (float)mPreviewWdith / mPreviewHeight;
+                mCroppedBitmap = Bitmap.createBitmap(INPUT_SIZE, (int) (INPUT_SIZE * ratio), Config.ARGB_8888);
+                Log.e("mCroppedBitmap", "width: " + mCroppedBitmap.getWidth());    // mCroppedBitmap: width: 224
+                Log.e("mCroppedBitmap", "height: " + mCroppedBitmap.getHeight());  // mCroppedBitmap: height: 336
 
                 mYUVBytes = new byte[planes.length][];
                 for (int i = 0; i < planes.length; ++i) {
@@ -213,15 +183,14 @@ public class OnGetImageListener implements OnImageAvailableListener {
         }
 
         mRGBframeBitmap.setPixels(mRGBBytes, 0, mPreviewWdith, 0, 0, mPreviewWdith, mPreviewHeight);
-        // add by simon at 2017/04/25 -- 换前置摄像头画面颠倒，需要以下变换调整
-        // use matrix to reverse image data and keep it normal
+        Log.e("mRGBframeBitmap", "width: " + mRGBframeBitmap.getWidth());    // mRGBframeBitmap: width: 480
+        Log.e("mRGBframeBitmap", "height: " + mRGBframeBitmap.getHeight());  // mRGBframeBitmap: height: 320
+
         Matrix mtx = new Matrix();
-        //this will prevent mirror effect
         mtx.preScale(-1.0f, 1.0f);
-        // Rotating Bitmap , create real image that we want
-        mRGBframeBitmap = Bitmap.createBitmap(mRGBframeBitmap, 0, 0, mRGBframeBitmap.getWidth(), mRGBframeBitmap.getHeight(), mtx, true);
-        // add by simon at 2017/04/25 -- end
-        drawResizedBitmap(mRGBframeBitmap, mCroppedBitmap);
+        mtx.postRotate(90.0f);
+        Bitmap mRotateBitmap = Bitmap.createBitmap(mRGBframeBitmap, 0, 0, mRGBframeBitmap.getWidth(), mRGBframeBitmap.getHeight(), mtx, true);
+        drawResizedBitmap(mRotateBitmap, mCroppedBitmap);
 
         if (SAVE_PREVIEW_BITMAP) {
             ImageUtils.saveBitmap(mCroppedBitmap);
@@ -329,6 +298,14 @@ public class OnGetImageListener implements OnImageAvailableListener {
                 });
 
         Trace.endSection();
+    }
+
+    public boolean isWindowVisible() {
+        return mWindow.isWindowVisible();
+    }
+
+    public void setWindowVisible(boolean isVisible) {
+        mWindow.setWindowVisible(isVisible);
     }
 
     public interface LandMarkListener {
