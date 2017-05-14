@@ -63,25 +63,36 @@
         android:orientation="horizontal"
         android:layout_gravity="bottom">
 
-        <Button
-            android:id="@+id/btn_view_crop"
+        <CheckBox
+            android:id="@+id/check_show_crop"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="隐藏缩略图"/>
+            android:text="显示小图"
+            android:checked="true"/>
 
-        <Button
-            android:id="@+id/btn_view_model"
+        <CheckBox
+            android:id="@+id/check_show_model"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="隐藏3d模型"/>
+            android:text="显示模型"
+            android:checked="true"/>
 
-        <Button
-            android:id="@+id/btn_draw_mode"
+        <CheckBox
+            android:id="@+id/check_land_mark"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="切换描绘模式"/>
+            android:text="关键点"
+            android:checked="true"/>
+
+        <CheckBox
+            android:id="@+id/check_draw_mode"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="显示材质"
+            android:checked="true"/>
     </LinearLayout>
 </FrameLayout>

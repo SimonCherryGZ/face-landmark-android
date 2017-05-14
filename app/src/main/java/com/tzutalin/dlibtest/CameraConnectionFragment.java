@@ -62,7 +62,8 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -98,8 +99,8 @@ public class CameraConnectionFragment extends AExampleFragment {
     private float lastX = 0;
     private float lastY = 0;
     private float lastZ = 0;
+    private boolean isDrawLandMark = true;
 
-    private Vector3 mCameraOffset = new Vector3();
     private Quaternion mQuaternion = new Quaternion();
 
     private Handler mUIHandler;
@@ -342,36 +343,40 @@ public class CameraConnectionFragment extends AExampleFragment {
         mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
         ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
 
-        Button btnViewCrop = (Button) view.findViewById(R.id.btn_view_crop);
-        Button btnViewModel = (Button) view.findViewById(R.id.btn_view_model);
-        Button btnModelAlpha = (Button) view.findViewById(R.id.btn_draw_mode);
+        CheckBox checkShowCrop = (CheckBox) view.findViewById(R.id.check_show_crop);
+        CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
+        CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
+        CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
 
-        btnViewCrop.setOnClickListener(new View.OnClickListener() {
+        checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                if (mOnGetPreviewListener.isWindowVisible()) {
-                    mOnGetPreviewListener.setWindowVisible(false);
-                } else {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
                     mOnGetPreviewListener.setWindowVisible(true);
-                }
-            }
-        });
-
-        btnViewModel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
-                if (renderer.mMonkey.isVisible()) {
-                    renderer.mMonkey.setVisible(false);
                 } else {
-                    renderer.mMonkey.setVisible(true);
+                    mOnGetPreviewListener.setWindowVisible(false);
                 }
             }
         });
 
-        btnModelAlpha.setOnClickListener(new View.OnClickListener() {
+        checkShowModel.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
+                renderer.mMonkey.setVisible(isChecked);
+            }
+        });
+
+        checkLandMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                isDrawLandMark = isChecked;
+            }
+        });
+
+        checkDrawMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 ((AccelerometerRenderer) mRenderer).toggleWireframe();
             }
         });
@@ -684,6 +689,15 @@ public class CameraConnectionFragment extends AExampleFragment {
         mOnGetPreviewListener.setLandMarkListener(new OnGetImageListener.LandMarkListener() {
             @Override
             public void onLandmarkChange(final List<VisionDetRet> results) {
+                if (!isDrawLandMark) {
+                    mUIHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            ivDraw.setImageResource(0);
+                        }
+                    });
+                    return;
+                }
                 inferenceHandler.post(new Runnable() {
                     @Override
                     public void run() {
