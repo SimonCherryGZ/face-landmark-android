@@ -40,6 +40,7 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
+import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -89,8 +90,6 @@ public class CameraConnectionFragment extends AExampleFragment {
 
     private Vector3 mCameraOffset = new Vector3();
     private Quaternion mQuaternion = new Quaternion();
-
-    private int mMonkeyAlpha = 255;
 
     /**
      * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -330,7 +329,7 @@ public class CameraConnectionFragment extends AExampleFragment {
 
         Button btnViewCrop = (Button) view.findViewById(R.id.btn_view_crop);
         Button btnViewModel = (Button) view.findViewById(R.id.btn_view_model);
-        Button btnModelAlpha = (Button) view.findViewById(R.id.btn_model_alpha);
+        Button btnModelAlpha = (Button) view.findViewById(R.id.btn_draw_mode);
 
         btnViewCrop.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -358,13 +357,7 @@ public class CameraConnectionFragment extends AExampleFragment {
         btnModelAlpha.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mMonkeyAlpha == 255) {
-                    mMonkeyAlpha = 127;
-                } else {
-                    mMonkeyAlpha = 255;
-                }
-                AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
-                renderer.mMonkey.setAlpha(mMonkeyAlpha);
+                ((AccelerometerRenderer) mRenderer).toggleWireframe();
             }
         });
     }
@@ -824,7 +817,7 @@ public class CameraConnectionFragment extends AExampleFragment {
         private Object3D mMonkey;
         private Vector3 mAccValues;
 
-        public AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
+        AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
             super(context, fragment);
             mAccValues = new Vector3();
         }
@@ -879,6 +872,11 @@ public class CameraConnectionFragment extends AExampleFragment {
 
         void setAccelerometerValues(float x, float y, float z) {
             mAccValues.setAll(x, y, z);
+        }
+
+        void toggleWireframe() {
+            mMonkey.setDrawingMode(mMonkey.getDrawingMode() == GLES20.GL_TRIANGLES ? GLES20.GL_LINES
+                    : GLES20.GL_TRIANGLES);
         }
     }
 }

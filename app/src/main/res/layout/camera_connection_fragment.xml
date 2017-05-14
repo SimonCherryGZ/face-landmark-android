@@ -68,10 +68,10 @@
             android:text="隐藏3d模型"/>
 
         <Button
-            android:id="@+id/btn_model_alpha"
+            android:id="@+id/btn_draw_mode"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="改变透明度"/>
+            android:text="切换描绘模式"/>
     </LinearLayout>
 </FrameLayout>
