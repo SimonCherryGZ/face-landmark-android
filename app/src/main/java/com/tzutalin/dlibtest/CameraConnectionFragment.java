@@ -26,8 +26,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -44,6 +50,7 @@ import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -56,8 +63,10 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.tzutalin.dlib.VisionDetRet;
 import com.tzutalin.dlibtest.rajawali3d.AExampleFragment;
 
 import org.rajawali3d.Object3D;
@@ -84,12 +93,17 @@ import hugo.weaving.DebugLog;
 
 public class CameraConnectionFragment extends AExampleFragment {
 
+    private ImageView ivDraw;
+
     private float lastX = 0;
     private float lastY = 0;
     private float lastZ = 0;
 
     private Vector3 mCameraOffset = new Vector3();
     private Quaternion mQuaternion = new Quaternion();
+
+    private Handler mUIHandler;
+    private Paint mFaceLandmarkPaint;
 
     /**
      * The camera preview size will be chosen to be the smallest frame by pixel size capable of
@@ -326,6 +340,7 @@ public class CameraConnectionFragment extends AExampleFragment {
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
         textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
+        ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
 
         Button btnViewCrop = (Button) view.findViewById(R.id.btn_view_crop);
         Button btnViewModel = (Button) view.findViewById(R.id.btn_view_model);
@@ -365,6 +380,13 @@ public class CameraConnectionFragment extends AExampleFragment {
     @Override
     public void onActivityCreated(final Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
+        mUIHandler = new Handler(Looper.getMainLooper());
+
+        mFaceLandmarkPaint = new Paint();
+        mFaceLandmarkPaint.setColor(Color.YELLOW);
+        mFaceLandmarkPaint.setStrokeWidth(2);
+        mFaceLandmarkPaint.setStyle(Paint.Style.STROKE);
     }
 
     @Override
@@ -661,6 +683,42 @@ public class CameraConnectionFragment extends AExampleFragment {
         mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
         mOnGetPreviewListener.setLandMarkListener(new OnGetImageListener.LandMarkListener() {
             @Override
+            public void onLandmarkChange(final List<VisionDetRet> results) {
+                inferenceHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (final VisionDetRet ret : results) {
+                            //float resizeRatio = 1.0f;
+                            float resizeRatio = 1.4286f;    // 预览尺寸 480x320  /  截取尺寸 336x224  (另外悬浮窗尺寸是 810x540)
+                            Rect bounds = new Rect();
+                            bounds.left = (int) (ret.getLeft() * resizeRatio);
+                            bounds.top = (int) (ret.getTop() * resizeRatio);
+                            bounds.right = (int) (ret.getRight() * resizeRatio);
+                            bounds.bottom = (int) (ret.getBottom() * resizeRatio);
+
+                            final Bitmap mBitmap = Bitmap.createBitmap(previewSize.getHeight(), previewSize.getWidth(), Bitmap.Config.ARGB_8888);
+                            Canvas canvas = new Canvas(mBitmap);
+                            canvas.drawRect(bounds, mFaceLandmarkPaint);
+
+                            ArrayList<Point> landmarks = ret.getFaceLandmarks();
+                            for (Point point : landmarks) {
+                                int pointX = (int) (point.x * resizeRatio);
+                                int pointY = (int) (point.y * resizeRatio);
+                                canvas.drawCircle(pointX, pointY, 2, mFaceLandmarkPaint);
+                            }
+
+                            mUIHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ivDraw.setImageBitmap(mBitmap);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            @Override
             public void onRotateChange(float x, float y, float z) {
                 if (mRenderer != null) {
                     boolean isJumpX = false;
@@ -707,9 +765,9 @@ public class CameraConnectionFragment extends AExampleFragment {
             }
 
             @Override
-            public void onRotationChange(ArrayList<Double> rotationList) {
-                if (rotationList != null && rotationList.size() >= 16) {
-                    Double[] mArray = rotationList.toArray(new Double[16]);
+            public void onMatrixChange(ArrayList<Double> elementList) {
+                if (elementList != null && elementList.size() >= 16) {
+                    Double[] mArray = elementList.toArray(new Double[16]);
                     double[] mHeadViewMatrix = new double[16];
                     for (int i=0; i<16; i++) {
                         mHeadViewMatrix[i] = mArray[i];

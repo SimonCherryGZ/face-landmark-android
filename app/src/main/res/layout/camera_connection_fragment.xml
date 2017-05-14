@@ -28,6 +28,16 @@
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true" />
 
+        <ImageView
+            android:id="@+id/iv_draw"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignLeft="@+id/texture"
+            android:layout_alignRight="@+id/texture"
+            android:layout_alignTop="@+id/texture"
+            android:layout_alignBottom="@+id/texture"/>
+
         <com.tzutalin.dlibtest.TrasparentTitleView
             android:id="@+id/results"
             android:layout_width="match_parent"

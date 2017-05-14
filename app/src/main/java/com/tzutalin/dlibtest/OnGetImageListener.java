@@ -24,8 +24,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
-import android.graphics.Rect;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
@@ -214,46 +212,50 @@ public class OnGetImageListener implements OnImageAvailableListener {
 //                        mTransparentTitleView.setText("Time cost: " + String.valueOf((endTime - startTime) / 1000f) + " sec");
                         // Draw on bitmap
                         if (results != null) {
+                            if (landMarkListener != null) {
+                                landMarkListener.onLandmarkChange(results);
+                            }
+
                             for (final VisionDetRet ret : results) {
-                                float resizeRatio = 1.0f;
-                                Rect bounds = new Rect();
-                                bounds.left = (int) (ret.getLeft() * resizeRatio);
-                                bounds.top = (int) (ret.getTop() * resizeRatio);
-                                bounds.right = (int) (ret.getRight() * resizeRatio);
-                                bounds.bottom = (int) (ret.getBottom() * resizeRatio);
-                                Canvas canvas = new Canvas(mCroppedBitmap);
-                                canvas.drawRect(bounds, mFaceLandmardkPaint);
+//                                float resizeRatio = 1.0f;
+//                                Rect bounds = new Rect();
+//                                bounds.left = (int) (ret.getLeft() * resizeRatio);
+//                                bounds.top = (int) (ret.getTop() * resizeRatio);
+//                                bounds.right = (int) (ret.getRight() * resizeRatio);
+//                                bounds.bottom = (int) (ret.getBottom() * resizeRatio);
+//                                Canvas canvas = new Canvas(mCroppedBitmap);
+//                                canvas.drawRect(bounds, mFaceLandmardkPaint);
+//
+//                                // Draw landmark
+//                                ArrayList<Point> landmarks = ret.getFaceLandmarks();
+//                                for (Point point : landmarks) {
+//                                    int pointX = (int) (point.x * resizeRatio);
+//                                    int pointY = (int) (point.y * resizeRatio);
+//                                    canvas.drawCircle(pointX, pointY, 2, mFaceLandmardkPaint);
+//                                }
 
-                                // Draw landmark
-                                ArrayList<Point> landmarks = ret.getFaceLandmarks();
-                                for (Point point : landmarks) {
-                                    int pointX = (int) (point.x * resizeRatio);
-                                    int pointY = (int) (point.y * resizeRatio);
-                                    canvas.drawCircle(pointX, pointY, 2, mFaceLandmardkPaint);
-                                }
-
-                                // add by simon at 2017/05/01 -- 描绘三维头部姿态
-                                ArrayList<Point> headPoses = ret.getPosePoints();
-                                if (headPoses != null) {
-                                    //Log.e("headPoses: ", headPoses.toString());
-                                    int temp = 0;
-                                    for (Point point : headPoses) {
-                                        int pointX = (int) (point.x * resizeRatio);
-                                        int pointY = (int) (point.y * resizeRatio);
-                                        if (temp == 0) {
-                                            mFaceLandmardkPaint.setColor(Color.RED);
-                                        } else if (temp == 1) {
-                                            mFaceLandmardkPaint.setColor(Color.GREEN);
-                                        } else if (temp == 2) {
-                                            mFaceLandmardkPaint.setColor(Color.BLUE);
-                                        }
-                                        canvas.drawLine(landmarks.get(30).x, landmarks.get(30).y, pointX, pointY, mFaceLandmardkPaint);
-                                        temp++;
-                                    }
-                                    mFaceLandmardkPaint.setColor(Color.YELLOW);
-                                } else {
-                                    Log.e("headPoses: ", "null");
-                                }
+//                                // add by simon at 2017/05/01 -- 描绘三维头部姿态
+//                                ArrayList<Point> headPoses = ret.getPosePoints();
+//                                if (headPoses != null) {
+//                                    //Log.e("headPoses: ", headPoses.toString());
+//                                    int temp = 0;
+//                                    for (Point point : headPoses) {
+//                                        int pointX = (int) (point.x * resizeRatio);
+//                                        int pointY = (int) (point.y * resizeRatio);
+//                                        if (temp == 0) {
+//                                            mFaceLandmardkPaint.setColor(Color.RED);
+//                                        } else if (temp == 1) {
+//                                            mFaceLandmardkPaint.setColor(Color.GREEN);
+//                                        } else if (temp == 2) {
+//                                            mFaceLandmardkPaint.setColor(Color.BLUE);
+//                                        }
+//                                        canvas.drawLine(landmarks.get(30).x, landmarks.get(30).y, pointX, pointY, mFaceLandmardkPaint);
+//                                        temp++;
+//                                    }
+//                                    mFaceLandmardkPaint.setColor(Color.YELLOW);
+//                                } else {
+//                                    Log.e("headPoses: ", "null");
+//                                }
 
                                 // add by simon at 2017/05/04 -- 获取3轴旋转角度
                                 ArrayList<Float> rotateList = ret.getRotate();
@@ -281,7 +283,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
 //                                if (rotationList != null && rotationList.size() >= 16) {
 //                                    Log.e("rotationList: ", rotationList.toString());
 //                                    if (landMarkListener != null) {
-//                                        landMarkListener.onRotationChange(rotationList);
+//                                        landMarkListener.onMatrixChange(rotationList);
 //                                    }
 //                                } else {
 //                                    Log.e("rotationList: ", "null");
@@ -309,9 +311,10 @@ public class OnGetImageListener implements OnImageAvailableListener {
     }
 
     public interface LandMarkListener {
+        void onLandmarkChange(List<VisionDetRet> results);
         void onRotateChange(float x, float y, float z);
         void onTransChange(float x, float y, float z);
-        void onRotationChange(ArrayList<Double> rotationList);
+        void onMatrixChange(ArrayList<Double> elementList);
     }
 
     private LandMarkListener landMarkListener;
