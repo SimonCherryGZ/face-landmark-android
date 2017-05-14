@@ -87,6 +87,8 @@ extern "C" {
 #define DLIB_FACE_JNI_METHOD(METHOD_NAME) \
   Java_com_tzutalin_dlib_FaceDet_##METHOD_NAME
 
+float bitmap_scale = 1.4286f;
+
 // add by simon at 2017/05/01 -- start
 std::vector<cv::Point3d> get_3d_model_points()
 {
@@ -120,12 +122,19 @@ std::vector<cv::Point3d> get_3d_model_points()
 std::vector<cv::Point2d> get_2d_image_points(dlib::full_object_detection &d)
 {
   std::vector<cv::Point2d> image_points;
-  image_points.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );    // Nose tip
-  image_points.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );      // Chin
-  image_points.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );    // Left eye left corner
-  image_points.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );    // Right eye right corner
-  image_points.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );    // Left Mouth corner
-  image_points.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );    // Right mouth corner
+//  image_points.push_back( cv::Point2d( d.part(30).x(), d.part(30).y() ) );    // Nose tip
+//  image_points.push_back( cv::Point2d( d.part(8).x(), d.part(8).y() ) );      // Chin
+//  image_points.push_back( cv::Point2d( d.part(36).x(), d.part(36).y() ) );    // Left eye left corner
+//  image_points.push_back( cv::Point2d( d.part(45).x(), d.part(45).y() ) );    // Right eye right corner
+//  image_points.push_back( cv::Point2d( d.part(48).x(), d.part(48).y() ) );    // Left Mouth corner
+//  image_points.push_back( cv::Point2d( d.part(54).x(), d.part(54).y() ) );    // Right mouth corner
+
+    image_points.push_back( cv::Point2d( (int)(d.part(30).x()*bitmap_scale), (int)(d.part(30).y()*bitmap_scale) ) );    // Nose tip
+    image_points.push_back( cv::Point2d( (int)(d.part(8).x()*bitmap_scale), (int)(d.part(8).y()*bitmap_scale) ) );      // Chin
+    image_points.push_back( cv::Point2d( (int)(d.part(36).x()*bitmap_scale), (int)(d.part(36).y()*bitmap_scale) ) );    // Left eye left corner
+    image_points.push_back( cv::Point2d( (int)(d.part(45).x()*bitmap_scale), (int)(d.part(45).y()*bitmap_scale) ) );    // Right eye right corner
+    image_points.push_back( cv::Point2d( (int)(d.part(48).x()*bitmap_scale), (int)(d.part(48).y()*bitmap_scale) ) );    // Left Mouth corner
+    image_points.push_back( cv::Point2d( (int)(d.part(54).x()*bitmap_scale), (int)(d.part(54).y()*bitmap_scale) ) );    // Right mouth corner
   return image_points;
 
 }
@@ -173,16 +182,25 @@ jobjectArray getDetectResult2(JNIEnv* env, DetectorPtr faceDetector, const int& 
       jobject jDetRet = JNI_VisionDetRet::createJObject(env);
       env->SetObjectArrayElement(jDetRetArray, i, jDetRet);
       dlib::rectangle rect = faceDetector->getResult()[i];
-      g_pJNI_VisionDetRet->setRect(env, jDetRet, rect.left(), rect.top(),
-              rect.right(), rect.bottom());
+//      g_pJNI_VisionDetRet->setRect(env, jDetRet, rect.left(), rect.top(),
+//              rect.right(), rect.bottom());
+        g_pJNI_VisionDetRet->setRect(env, jDetRet,
+                (int)(rect.left() * bitmap_scale),
+                (int)(rect.top() * bitmap_scale),
+                (int)(rect.right() * bitmap_scale),
+                (int)(rect.bottom() * bitmap_scale));
+
+
       g_pJNI_VisionDetRet->setLabel(env, jDetRet, "face");
       std::unordered_map<int, dlib::full_object_detection>& faceShapeMap =
               faceDetector->getFaceShapeMap();
       if (faceShapeMap.find(i) != faceShapeMap.end()) {
           dlib::full_object_detection shape = faceShapeMap[i];
           for (unsigned long j = 0; j < shape.num_parts(); j++) {
-            int x = shape.part(j).x();
-            int y = shape.part(j).y();
+//            int x = shape.part(j).x();
+//            int y = shape.part(j).y();
+            int x = (int)(shape.part(j).x() * bitmap_scale);
+            int y = (int)(shape.part(j).y() * bitmap_scale);
             // Call addLandmark
             g_pJNI_VisionDetRet->addLandmark(env, jDetRet, x, y);
           }
@@ -192,7 +210,11 @@ jobjectArray getDetectResult2(JNIEnv* env, DetectorPtr faceDetector, const int& 
           std::vector<cv::Point3d> model_points = get_3d_model_points();
           std::vector<cv::Point2d> image_points = get_2d_image_points(shape);
           double focal_length = img.cols;
-          cv::Mat camera_matrix = get_camera_matrix(focal_length, cv::Point2d(img.cols/2,img.rows/2));
+          //cv::Mat camera_matrix = get_camera_matrix(focal_length, cv::Point2d(img.cols/2,img.rows/2));
+          cv::Mat camera_matrix = get_camera_matrix(
+                  focal_length * bitmap_scale,
+                  cv::Point2d((int)(img.cols * bitmap_scale)/2,
+                              (int)(img.rows * bitmap_scale)/2));
           cv::Mat rotation_vector;
           cv::Mat rotation_matrix;
           cv::Mat translation_vector;
