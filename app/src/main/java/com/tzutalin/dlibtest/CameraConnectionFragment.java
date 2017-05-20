@@ -73,6 +73,7 @@ import com.tzutalin.dlibtest.rajawali3d.AExampleFragment;
 import org.rajawali3d.Object3D;
 import org.rajawali3d.lights.DirectionalLight;
 import org.rajawali3d.loader.LoaderAWD;
+import org.rajawali3d.loader.LoaderOBJ;
 import org.rajawali3d.materials.Material;
 import org.rajawali3d.materials.methods.DiffuseMethod;
 import org.rajawali3d.materials.textures.CubeMapTexture;
@@ -886,7 +887,9 @@ public class CameraConnectionFragment extends AExampleFragment {
 
     private final class AccelerometerRenderer extends AExampleRenderer {
         private DirectionalLight mLight;
+        private Object3D mContainer;
         private Object3D mMonkey;
+        private Object3D mGlasses;
         private Vector3 mAccValues;
 
         AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
@@ -905,11 +908,9 @@ public class CameraConnectionFragment extends AExampleFragment {
                 final LoaderAWD parser = new LoaderAWD(mContext.getResources(), mTextureManager, R.raw.head_object_new);
                 parser.parse();
                 mMonkey = parser.getParsedObject();
-                mMonkey.setScale(.03f);
+                mMonkey.setScale(0.03f);
                 mMonkey.setPosition(0, 0, 0);
-                getCurrentScene().addChild(mMonkey);
-
-                getCurrentCamera().setZ(20);
+//                getCurrentScene().addChild(mMonkey);
 
                 int[] resourceIds = new int[]{R.drawable.posx, R.drawable.negx,
                         R.drawable.posy, R.drawable.negy, R.drawable.posz,
@@ -926,6 +927,19 @@ public class CameraConnectionFragment extends AExampleFragment {
                 material.setColorInfluence(0);
                 mMonkey.setMaterial(material);
 
+                LoaderOBJ objParser = new LoaderOBJ(mContext.getResources(), mTextureManager, R.raw.glasses_new_obj);
+                objParser.parse();
+                mGlasses = objParser.getParsedObject();
+                mGlasses.setScale(0.12f);
+                //mFuck.setY(0.5f);
+                mGlasses.setZ(0.5f);
+
+                mContainer = new Object3D();
+                mContainer.addChild(mMonkey);
+                mContainer.addChild(mGlasses);
+                getCurrentScene().addChild(mContainer);
+                getCurrentCamera().setZ(20);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -939,7 +953,8 @@ public class CameraConnectionFragment extends AExampleFragment {
         @Override
         protected void onRender(long ellapsedRealtime, double deltaTime) {
             super.onRender(ellapsedRealtime, deltaTime);
-            mMonkey.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
+            //mMonkey.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
+            mContainer.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
         }
 
         void setAccelerometerValues(float x, float y, float z) {
