@@ -776,7 +776,8 @@ public class CameraConnectionFragment extends AExampleFragment {
             @Override
             public void onTransChange(float x, float y, float z) {
                 AccelerometerRenderer renderer = ((AccelerometerRenderer) mRenderer);
-                renderer.getCurrentCamera().setPosition(-x/20, y/20, z/17);
+                renderer.getCurrentCamera().setPosition(-x/200, y/200, z/100);
+                //renderer.mContainer.setPosition(x/20, -y/20, z/20);
             }
 
             @Override
@@ -910,9 +911,8 @@ public class CameraConnectionFragment extends AExampleFragment {
                 final LoaderAWD parser = new LoaderAWD(mContext.getResources(), mTextureManager, R.raw.head_object_new);
                 parser.parse();
                 mMonkey = parser.getParsedObject();
-                mMonkey.setScale(0.03f);
-                mMonkey.setY(0.05);
-                mMonkey.setZ(-2f);
+                mMonkey.setScale(0.005f);
+                //mMonkey.setZ(-2f);
 //                getCurrentScene().addChild(mMonkey);
 
                 int[] resourceIds = new int[]{R.drawable.posx, R.drawable.negx,
@@ -933,24 +933,25 @@ public class CameraConnectionFragment extends AExampleFragment {
                 LoaderOBJ objParser1 = new LoaderOBJ(mContext.getResources(), mTextureManager, R.raw.glasses_obj);
                 objParser1.parse();
                 mGlasses = objParser1.getParsedObject();
-                mGlasses.setScale(0.03f);
-                mGlasses.setZ(-0.2f);
+                mGlasses.setScale(0.005f);
+                //mGlasses.setZ(-0.2f);
+                mGlasses.setZ(0.3f);
                 mGlasses.rotate(Vector3.Axis.X, -90.0f);
 
                 LoaderOBJ objParser2 = new LoaderOBJ(mContext.getResources(), mTextureManager, R.raw.hair_band_obj);
                 objParser2.parse();
                 mHairBand = objParser2.getParsedObject();
-                mHairBand.setScale(0.036f);
-                mHairBand.setY(1.67f);
-                mHairBand.setZ(-3.5f);
+                mHairBand.setScale(0.006f);
+                mHairBand.setY(0.27f);
+                mHairBand.setZ(-0.25f);
                 mHairBand.rotate(Vector3.Axis.X, -90.0f);
 
                 LoaderOBJ objParser3 = new LoaderOBJ(mContext.getResources(), mTextureManager, R.raw.moustache_obj);
                 objParser3.parse();
                 mMoustache = objParser3.getParsedObject();
-                mMoustache.setScale(0.042f);
-                mMoustache.setY(-1.55f);
-                mMoustache.setZ(-0.2f);
+                mMoustache.setScale(0.007f);
+                mMoustache.setY(-0.25f);
+                mMoustache.setZ(0.3f);
                 mMoustache.rotate(Vector3.Axis.X, -90.0f);
 
                 mContainer = new Object3D();
@@ -959,7 +960,7 @@ public class CameraConnectionFragment extends AExampleFragment {
                 mContainer.addChild(mHairBand);
                 mContainer.addChild(mMoustache);
                 getCurrentScene().addChild(mContainer);
-                getCurrentCamera().setZ(20);
+                //getCurrentCamera().setZ(20);
 
             } catch (Exception e) {
                 e.printStackTrace();
