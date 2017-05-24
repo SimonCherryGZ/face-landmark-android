@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-package com.tzutalin.dlib;
+package com.simoncherry.dlib;
 
 /**
  * Created by Tzutalin on 2015/10/20.

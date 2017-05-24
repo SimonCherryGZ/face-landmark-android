@@ -2,7 +2,7 @@
 *  Copyright (C) 2015 TzuTaLin
 */
 
-package com.tzutalin.dlibtest;
+package com.simoncherry.artest;
 
 import android.Manifest;
 import android.app.Activity;
@@ -34,10 +34,10 @@ import android.widget.Toast;
 import com.dexafree.materialList.card.Card;
 import com.dexafree.materialList.card.provider.BigImageCardProvider;
 import com.dexafree.materialList.view.MaterialListView;
-import com.tzutalin.dlib.Constants;
-import com.tzutalin.dlib.FaceDet;
-import com.tzutalin.dlib.PedestrianDet;
-import com.tzutalin.dlib.VisionDetRet;
+import com.simoncherry.dlib.Constants;
+import com.simoncherry.dlib.FaceDet;
+import com.simoncherry.dlib.PedestrianDet;
+import com.simoncherry.dlib.VisionDetRet;
 
 import org.androidannotations.annotations.AfterViews;
 import org.androidannotations.annotations.Background;

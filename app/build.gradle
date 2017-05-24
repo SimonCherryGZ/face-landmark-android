@@ -5,7 +5,7 @@ android {
     buildToolsVersion '25.0.2'
 
     defaultConfig {
-        applicationId "com.tzutalin.dlibtest"
+        applicationId "com.simoncherry.artest"
         minSdkVersion 21
         targetSdkVersion 25
         versionCode 1

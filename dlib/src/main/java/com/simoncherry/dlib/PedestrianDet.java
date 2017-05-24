@@ -14,9 +14,8 @@
 * limitations under the License.
 */
 
-package com.tzutalin.dlib;
+package com.simoncherry.dlib;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
@@ -24,14 +23,8 @@ import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.util.Log;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static android.R.attr.path;
 
 /**
  * Created by Tzutalin on 2015/10/20.

@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.tzutalin.dlibtest.AutoFitTextureView
+        <com.simoncherry.artest.AutoFitTextureView
             android:id="@+id/texture"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -38,7 +38,7 @@
             android:layout_alignTop="@+id/texture"
             android:layout_alignBottom="@+id/texture"/>
 
-        <com.tzutalin.dlibtest.TrasparentTitleView
+        <com.simoncherry.artest.TrasparentTitleView
             android:id="@+id/results"
             android:layout_width="match_parent"
             android:layout_height="70dp"

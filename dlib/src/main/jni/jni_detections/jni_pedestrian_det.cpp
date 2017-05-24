@@ -86,7 +86,7 @@ extern "C" {
 // JNI Mapping Methods
 // ========================================================
 #define DLIB_JNI_METHOD(METHOD_NAME) \
-  Java_com_tzutalin_dlib_PedestrianDet_##METHOD_NAME
+  Java_com_simoncherry_dlib_PedestrianDet_##METHOD_NAME
 
 jobjectArray getDetRet(JNIEnv* env, DetectorPtr detectorPtr, const int& size) {
   LOG(INFO) << "getDetRet";

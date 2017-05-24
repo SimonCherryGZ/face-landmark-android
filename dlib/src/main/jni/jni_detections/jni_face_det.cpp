@@ -85,7 +85,7 @@ extern "C" {
 
 
 #define DLIB_FACE_JNI_METHOD(METHOD_NAME) \
-  Java_com_tzutalin_dlib_FaceDet_##METHOD_NAME
+  Java_com_simoncherry_dlib_FaceDet_##METHOD_NAME
 
 float bitmap_scale = 1.4286f;
 

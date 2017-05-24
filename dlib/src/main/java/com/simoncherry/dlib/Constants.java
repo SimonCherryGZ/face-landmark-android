@@ -1,4 +1,4 @@
-package com.tzutalin.dlib;
+package com.simoncherry.dlib;
 
 import android.os.Environment;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.tzutalin.dlibtest;
+package com.simoncherry.artest;
 
 import android.graphics.Bitmap;
 import android.os.Environment;

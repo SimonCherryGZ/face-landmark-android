@@ -12,11 +12,11 @@
 #define CLASSNAME_POINTF "android/graphics/PointF"
 #define CONSTSIG_POINTF "()V"
 
-#define CLASSNAME_VISION_DET_RET "com/tzutalin/dlib/VisionDetRet"
+#define CLASSNAME_VISION_DET_RET "com/simoncherry/dlib/VisionDetRet"
 #define CONSTSIG_VISION_DET_RET "()V"
 
-#define CLASSNAME_FACE_DET "com/tzutalin/dlib/FaceDet"
-#define CLASSNAME_PEDESTRIAN_DET "com/tzutalin/dlib/PedestrianDet"
+#define CLASSNAME_FACE_DET "com/simoncherry/dlib/FaceDet"
+#define CLASSNAME_PEDESTRIAN_DET "com/simoncherry/dlib/PedestrianDet"
 
 class JavaPeer {
  public:

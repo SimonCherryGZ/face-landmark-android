@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.tzutalin.dlibtest;
+package com.simoncherry.artest;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -32,9 +32,9 @@ import android.os.Handler;
 import android.os.Trace;
 import android.util.Log;
 
-import com.tzutalin.dlib.Constants;
-import com.tzutalin.dlib.FaceDet;
-import com.tzutalin.dlib.VisionDetRet;
+import com.simoncherry.dlib.Constants;
+import com.simoncherry.dlib.FaceDet;
+import com.simoncherry.dlib.VisionDetRet;
 
 import java.io.File;
 import java.util.ArrayList;

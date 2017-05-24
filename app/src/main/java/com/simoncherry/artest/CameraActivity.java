@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.tzutalin.dlibtest;
+package com.simoncherry.artest;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;

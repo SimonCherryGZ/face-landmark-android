@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.tzutalin.dlibtest;
+package com.simoncherry.artest;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -67,8 +67,8 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.tzutalin.dlib.VisionDetRet;
-import com.tzutalin.dlibtest.rajawali3d.AExampleFragment;
+import com.simoncherry.dlib.VisionDetRet;
+import com.simoncherry.artest.rajawali3d.AExampleFragment;
 
 import org.rajawali3d.Object3D;
 import org.rajawali3d.lights.DirectionalLight;

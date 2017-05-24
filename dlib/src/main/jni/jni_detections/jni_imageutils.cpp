@@ -17,7 +17,7 @@
 using namespace jnicommon;
 
 #define IMAGEUTILS_METHOD(METHOD_NAME) \
-  Java_com_tzutalin_dlibtest_ImageUtils_##METHOD_NAME  // NOLINT
+  Java_com_simoncherry_artest_ImageUtils_##METHOD_NAME  // NOLINT
 
 #ifdef __cplusplus
 extern "C" {

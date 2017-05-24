@@ -4,9 +4,9 @@ import android.graphics.Point;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.SmallTest;
 
-import com.tzutalin.dlib.Constants;
-import com.tzutalin.dlib.FaceDet;
-import com.tzutalin.dlib.VisionDetRet;
+import com.simoncherry.dlib.Constants;
+import com.simoncherry.dlib.FaceDet;
+import com.simoncherry.dlib.VisionDetRet;
 
 import junit.framework.Assert;
 
