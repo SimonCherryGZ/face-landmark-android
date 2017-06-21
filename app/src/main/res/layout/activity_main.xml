@@ -22,6 +22,12 @@
 
     </android.support.design.widget.AppBarLayout>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="↑：根据2D人脸构建简单3D人脸模型\n↙：摄像头画面增强现实\n↘：检测人脸图片关键点"/>
+
     <include layout="@layout/content_main"/>
 
     <android.support.design.widget.FloatingActionButton
@@ -40,5 +46,13 @@
         android:layout_gravity="bottom|start"
         android:layout_margin="@dimen/fab_margin"
         android:src="@drawable/ic_camera_alt_black_36dp"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_mask"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center"
+        android:layout_margin="@dimen/fab_margin"
+        android:src="@drawable/loader"/>
 
 </android.support.design.widget.CoordinatorLayout>

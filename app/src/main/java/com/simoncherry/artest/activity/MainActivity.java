@@ -75,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
     protected FloatingActionButton mFabActionBt;
     @ViewById(R.id.fab_cam)
     protected FloatingActionButton mFabCamActionBt;
+    @ViewById(R.id.fab_mask)
+    protected FloatingActionButton mFabMaskBt;
     @ViewById(R.id.toolbar)
     protected Toolbar mToolbar;
 
@@ -114,6 +116,11 @@ public class MainActivity extends AppCompatActivity {
     @Click({R.id.fab_cam})
     protected void launchCameraPreview() {
         startActivity(new Intent(this, CameraActivity.class));
+    }
+
+    @Click({R.id.fab_mask})
+    protected void launchBuildMask() {
+        startActivity(new Intent(this, BuildMaskActivity_.class));
     }
 
     /**
