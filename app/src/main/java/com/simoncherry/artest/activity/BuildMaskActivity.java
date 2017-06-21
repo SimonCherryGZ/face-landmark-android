@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -16,7 +15,6 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -36,9 +34,13 @@ import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -132,12 +134,15 @@ public class BuildMaskActivity extends AppCompatActivity {
         final String texturePath = textureDir + textureName + ".jpg";
         final List<VisionDetRet> faceList = mFaceDet.detect(texturePath);
         if (faceList != null && faceList.size() > 0) {
-            saveLandmarkTxt(faceList.get(0).getFaceLandmarks(), textureDir, textureName);
+            ArrayList<Point> landmarks = faceList.get(0).getFaceLandmarks();
+            saveLandmarkTxt(landmarks, textureDir, textureName);
+            saveLandmark2Vertices(landmarks, textureDir, textureName);
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    ivFace.setImageDrawable(drawRect(texturePath, faceList, Color.GREEN));
+                    //ivFace.setImageDrawable(drawRect(texturePath, faceList, Color.GREEN));
+                    Toast.makeText(BuildMaskActivity.this, "Done!", Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -162,30 +167,6 @@ public class BuildMaskActivity extends AppCompatActivity {
     protected void dismissDialog() {
         if (mDialog != null) {
             mDialog.dismiss();
-        }
-    }
-
-    private void saveLandmarkTxt(ArrayList<Point> landmarks, String path, String name) {
-        String jsonString = JSON.toJSONString(landmarks);
-        Log.i(TAG, "landmarks: " + jsonString);
-
-        String fileName = path + name + ".txt";
-        try {
-            int i = 0;
-            FileWriter writer = new FileWriter(fileName);
-            for (Point point : landmarks) {
-                int pointX = point.x;
-                int pointY = point.y ;
-                String landmark = String.valueOf(pointX) + " " + String.valueOf(pointY) + "\n";
-                Log.i(TAG, "write landmark[" + String.valueOf(i) + "]: " + landmark);
-                i++;
-                writer.write(landmark);
-            }
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.i(TAG, e.toString());
         }
     }
 
@@ -258,7 +239,167 @@ public class BuildMaskActivity extends AppCompatActivity {
 
     @DebugLog
     protected Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
-        Bitmap resizedBitmap = Bitmap.createScaledBitmap(bm, newWidth, newHeight, true);
-        return resizedBitmap;
+        return Bitmap.createScaledBitmap(bm, newWidth, newHeight, true);
+    }
+
+    private void saveLandmarkTxt(ArrayList<Point> landmarks, String path, String name) {
+        String jsonString = JSON.toJSONString(landmarks);
+        Log.i(TAG, "landmarks: " + jsonString);
+
+        String fileName = path + name + ".txt";
+        try {
+            int i = 0;
+            FileWriter writer = new FileWriter(fileName);
+            for (Point point : landmarks) {
+                int pointX = point.x;
+                int pointY = point.y ;
+                String landmark = String.valueOf(pointX) + " " + String.valueOf(pointY) + "\n";
+                Log.i(TAG, "write landmark[" + String.valueOf(i) + "]: " + landmark);
+                i++;
+                writer.write(landmark);
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.i(TAG, e.toString());
+        }
+    }
+
+    private void saveLandmark2Vertices(ArrayList<Point> landmarks, String path, String name) {
+        ArrayList<Point> vertices = new ArrayList<>();
+        for (int i=0; i<40; i++) {
+            vertices.add(new Point(0, 0));
+        }
+
+        for (int i=0; i<vertices.size(); i++) {
+            vertices.set(i, getVertexByIndex(landmarks, i));
+        }
+
+        Point chin_point = landmarks.get(8);
+        Point what_point = vertices.get(0);
+        float z_scale = (what_point.x - chin_point.x) / 30f / -2.15f;
+
+        ArrayList<Float> zAxisPoints = new ArrayList<>();
+        InputStream is = getResources().openRawResource(R.raw.z_axis);
+        try {
+            InputStreamReader reader = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(reader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                zAxisPoints.add(Float.parseFloat(str));
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.i(TAG, "get z-axis: " + zAxisPoints.toString());
+
+        DecimalFormat decimalFormat = new DecimalFormat(".000000");
+        String fileName = path + name + "_vertices.txt";
+        try {
+            int i = 0;
+            FileWriter writer = new FileWriter(fileName);
+            for (Point point : vertices) {
+                float pointZ = zAxisPoints.get(i) * z_scale;
+                float pointX = (point.x - chin_point.x) / 30f;
+                float pointY = (point.y - chin_point.y) / -30f;
+                String landmark = "v " + decimalFormat.format(pointX) + " " + decimalFormat.format(pointY) + " " + decimalFormat.format(pointZ) + "\n";
+                Log.i(TAG, "write landmark[" + String.valueOf(i) + "]: " + landmark);
+                i++;
+                writer.write(landmark);
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.i(TAG, e.toString());
+        }
+    }
+
+    private Point getVertexByIndex(ArrayList<Point> landmarks, int index) {
+        switch (index) {
+            case 0:
+                return landmarks.get(36);
+            case 1:
+                return landmarks.get(39);
+            case 2:
+                return getMeanPoint(landmarks, 40, 41);
+            case 3:
+                return getMeanPoint(landmarks, 37, 38);
+            case 4:
+                return landmarks.get(20);
+            case 5:
+                return landmarks.get(27);
+            case 6:
+                return landmarks.get(23);
+            case 7:
+                return landmarks.get(42);
+            case 8:
+                return landmarks.get(35);
+            case 9:
+                return getMeanPoint(landmarks, 43, 44);
+            case 10:
+                return landmarks.get(45);
+            case 11:
+                return getMeanPoint(landmarks, 46, 47);
+            case 12:
+                return getMeanPoint(landmarks, 31, 35);
+            case 13:
+                return landmarks.get(31);
+            case 14:
+                return landmarks.get(33);
+            case 15:
+                return landmarks.get(62);
+            case 16:
+                return landmarks.get(48);
+            case 17:
+                return landmarks.get(54);
+            case 18:
+                return landmarks.get(57);
+            case 19:
+            case 31:
+                return landmarks.get(8);
+            case 20:
+                return getMeanPoint(landmarks, 20, 23);
+            case 21:
+                return landmarks.get(25);
+            case 22:
+                return landmarks.get(16);
+            case 23:
+            case 36:
+                return landmarks.get(15);
+            case 24:
+            case 34:
+                return landmarks.get(12);
+            case 25:
+            case 32:
+                return landmarks.get(10);
+            case 26:
+                return landmarks.get(18);
+            case 27:
+                return landmarks.get(0);
+            case 28:
+            case 37:
+                return landmarks.get(1);
+            case 29:
+            case 35:
+                return landmarks.get(4);
+            case 30:
+            case 33:
+                return landmarks.get(6);
+            case 38:
+                return getMeanPoint(landmarks, 36, 39);
+            case 39:
+                return getMeanPoint(landmarks, 42, 45);
+            default:
+                return landmarks.get(0);
+        }
+    }
+
+    private Point getMeanPoint(ArrayList<Point> landmarks, int p1, int p2) {
+        Point point1 = landmarks.get(p1);
+        Point point2 = landmarks.get(p2);
+        return new Point((point1.x+point2.x)/2, (point1.y+point2.y)/2);
     }
 }
