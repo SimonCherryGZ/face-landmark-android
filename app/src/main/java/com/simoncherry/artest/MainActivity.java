@@ -225,13 +225,7 @@ public class MainActivity extends AppCompatActivity {
 
         final String targetPath = Constants.getFaceShapeModelPath();
         if (!new File(targetPath).exists()) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(MainActivity.this, "Copy landmark model to " + targetPath, Toast.LENGTH_SHORT).show();
-                }
-            });
-            FileUtils.copyFileFromRawToOthers(getApplicationContext(), R.raw.shape_predictor_68_face_landmarks, targetPath);
+            throw new RuntimeException("cannot find shape_predictor_68_face_landmarks.dat");
         }
         // Init
         if (mPersonDet == null) {
