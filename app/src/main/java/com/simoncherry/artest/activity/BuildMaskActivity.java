@@ -87,6 +87,17 @@ public class BuildMaskActivity extends AppCompatActivity {
         doCreateObjFile();
     }
 
+    @Click({R.id.btn_load_obj})
+    protected void showMaskModel() {
+        if (mCurrentImgPath == null) {
+            Toast.makeText(BuildMaskActivity.this, "没有找到人脸图片", Toast.LENGTH_SHORT).show();
+        } else {
+            Intent intent = new Intent(this, ShowMaskActivity.class);
+            intent.putExtra(ShowMaskActivity.IMG_KEY, mCurrentImgPath);
+            startActivity(intent);
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

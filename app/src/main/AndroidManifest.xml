@@ -31,7 +31,8 @@
             android:name=".activity.CameraActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name" />
-        <activity android:name=".activity.BuildMaskActivity_"></activity>
+        <activity android:name=".activity.BuildMaskActivity_" />
+        <activity android:name=".activity.ShowMaskActivity"></activity>
     </application>
 
 </manifest>
