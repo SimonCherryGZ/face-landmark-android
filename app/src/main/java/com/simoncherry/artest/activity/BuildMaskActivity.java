@@ -560,6 +560,13 @@ public class BuildMaskActivity extends AppCompatActivity {
             Toast.makeText(BuildMaskActivity.this, "没有找到人脸图片", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        File sdcard = Environment.getExternalStorageDirectory();
+        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator + "base_mask.mtl";
+        FileUtils.copyFileFromRawToOthers(this, R.raw.base_mask, path);
+        path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator + "base_texture.jpg";
+        FileUtils.copyFileFromRawToOthers(this, R.raw.base_texture, path);
+
         // 读取预设模型base_mask_obj
         StringBuilder stringBuilder = new StringBuilder();
         InputStream is = getResources().openRawResource(R.raw.base_mask_obj);
@@ -591,8 +598,7 @@ public class BuildMaskActivity extends AppCompatActivity {
         }
 
         // 保存
-        File sdcard = Environment.getExternalStorageDirectory();
-        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
         String name = FileUtils.getMD5(mCurrentImgPath);
         String fileName = path + name + "_obj";
 

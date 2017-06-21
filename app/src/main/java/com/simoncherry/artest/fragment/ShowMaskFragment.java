@@ -2,11 +2,14 @@ package com.simoncherry.artest.fragment;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.Nullable;
 
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
+import com.simoncherry.artest.util.BitmapUtils;
 import com.simoncherry.artest.util.FileUtils;
 
 import org.rajawali3d.Object3D;
@@ -15,8 +18,8 @@ import org.rajawali3d.debug.DebugVisualizer;
 import org.rajawali3d.debug.GridFloor;
 import org.rajawali3d.lights.DirectionalLight;
 import org.rajawali3d.loader.LoaderOBJ;
-import org.rajawali3d.materials.Material;
-import org.rajawali3d.materials.methods.DiffuseMethod;
+import org.rajawali3d.materials.textures.ATexture;
+import org.rajawali3d.materials.textures.Texture;
 
 import java.io.File;
 
@@ -75,19 +78,27 @@ public class ShowMaskFragment extends AExampleFragment {
                 debugViz.addChild(new GridFloor());
                 getCurrentScene().addChild(debugViz);
 
-                String textureDir ="BuildMask" + File.separator;
-                String textureName = FileUtils.getMD5(mImagePath) + "_obj";
-                LoaderOBJ parser = new LoaderOBJ(this, textureDir + textureName);
+                String objDir ="BuildMask" + File.separator;
+                String objName = FileUtils.getMD5(mImagePath) + "_obj";
+                LoaderOBJ parser = new LoaderOBJ(this, objDir + objName);
                 parser.parse();
                 Object3D monkey = parser.getParsedObject();
+                ATexture texture = monkey.getMaterial().getTextureList().get(0);
+                monkey.getMaterial().removeTexture(texture);
                 monkey.setScale(0.65f);
 
-                Material material = new Material();
-                material.enableLighting(true);
-                material.setDiffuseMethod(new DiffuseMethod.Lambert());
-                material.setColor(0x990000);
+//                Material material = new Material();
+//                material.enableLighting(true);
+//                material.setDiffuseMethod(new DiffuseMethod.Lambert());
+//                material.setColor(0x990000);
+//                monkey.setMaterial(material);
 
-                monkey.setMaterial(material);
+                File sdcard = Environment.getExternalStorageDirectory();
+                String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+                String textureName = FileUtils.getMD5(mImagePath) + ".jpg";
+                Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(textureDir + textureName, 1024, 1024);
+                monkey.getMaterial().addTexture(new Texture("canvas", bitmap));
+
                 getCurrentScene().addChild(monkey);
 
                 ArcballCamera arcBall = new ArcballCamera(mContext, ((Activity)mContext).findViewById(R.id.layout_container));
