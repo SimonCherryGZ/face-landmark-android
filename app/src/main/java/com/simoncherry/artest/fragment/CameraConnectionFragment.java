@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.simoncherry.artest;
+package com.simoncherry.artest.fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -67,6 +67,10 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.simoncherry.artest.OnGetImageListener;
+import com.simoncherry.artest.R;
+import com.simoncherry.artest.custom.AutoFitTextureView;
+import com.simoncherry.artest.custom.TrasparentTitleView;
 import com.simoncherry.dlib.VisionDetRet;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 

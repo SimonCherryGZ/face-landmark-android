@@ -14,7 +14,7 @@
  *  imitations under the License.
  */
 
-package com.simoncherry.artest;
+package com.simoncherry.artest.custom;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -33,6 +33,8 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.simoncherry.artest.R;
 
 import java.lang.ref.WeakReference;
 

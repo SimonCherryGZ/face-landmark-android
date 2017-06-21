@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.simoncherry.artest;
+package com.simoncherry.artest.activity;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -24,6 +24,9 @@ import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import com.simoncherry.artest.fragment.CameraConnectionFragment;
+import com.simoncherry.artest.R;
 
 /**
  * Created by darrenl on 2016/5/20.

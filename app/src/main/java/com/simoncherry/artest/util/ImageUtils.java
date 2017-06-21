@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.simoncherry.artest;
+package com.simoncherry.artest.util;
 
 import android.graphics.Bitmap;
 import android.os.Environment;

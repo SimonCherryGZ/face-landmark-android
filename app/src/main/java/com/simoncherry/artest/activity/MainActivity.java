@@ -2,7 +2,7 @@
 *  Copyright (C) 2015 TzuTaLin
 */
 
-package com.simoncherry.artest;
+package com.simoncherry.artest.activity;
 
 import android.Manifest;
 import android.app.Activity;
@@ -34,6 +34,7 @@ import android.widget.Toast;
 import com.dexafree.materialList.card.Card;
 import com.dexafree.materialList.card.provider.BigImageCardProvider;
 import com.dexafree.materialList.view.MaterialListView;
+import com.simoncherry.artest.R;
 import com.simoncherry.dlib.Constants;
 import com.simoncherry.dlib.FaceDet;
 import com.simoncherry.dlib.PedestrianDet;

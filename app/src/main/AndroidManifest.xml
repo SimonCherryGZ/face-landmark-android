@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.simoncherry.artest.MainActivity_"
+            android:name="com.simoncherry.artest.activity.MainActivity_"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
@@ -30,7 +30,7 @@
         </activity>
 
         <activity
-            android:name="com.simoncherry.artest.CameraActivity"
+            android:name="com.simoncherry.artest.activity.CameraActivity"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name">
         </activity>

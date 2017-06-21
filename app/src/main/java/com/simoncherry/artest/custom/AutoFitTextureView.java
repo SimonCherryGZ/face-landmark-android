@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.simoncherry.artest;
+package com.simoncherry.artest.custom;
 
 import android.content.Context;
 import android.util.AttributeSet;

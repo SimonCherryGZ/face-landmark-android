@@ -32,6 +32,9 @@ import android.os.Handler;
 import android.os.Trace;
 import android.util.Log;
 
+import com.simoncherry.artest.custom.FloatingCameraWindow;
+import com.simoncherry.artest.custom.TrasparentTitleView;
+import com.simoncherry.artest.util.ImageUtils;
 import com.simoncherry.dlib.Constants;
 import com.simoncherry.dlib.FaceDet;
 import com.simoncherry.dlib.VisionDetRet;
