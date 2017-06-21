@@ -36,6 +36,7 @@ import org.androidannotations.annotations.ViewById;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -541,6 +542,7 @@ public class BuildMaskActivity extends AppCompatActivity {
     }
 
     private void doCreateObjFile() {
+        // 读取预设模型base_mask_obj
         StringBuilder stringBuilder = new StringBuilder();
         InputStream is = getResources().openRawResource(R.raw.base_mask_obj);
         try {
@@ -557,13 +559,26 @@ public class BuildMaskActivity extends AppCompatActivity {
         String obj_str = stringBuilder.toString();
         Log.i(TAG, "read base_mask_obj: " + obj_str);
 
+        // 替换新的顶点和UV坐标
+        String[] ss = obj_str.split("\n");
+        List<String> vertices = readVerticesFromTxt();
+        List<String> coordinates = readCoordinatesFromTxt();
+
+        for (int i=4; i<44; i++) {
+            ss[i] = vertices.get(i-4);
+        }
+
+        for (int i=44; i<84; i++) {
+            ss[i] = coordinates.get(i-44);
+        }
+
+        // 保存
         File sdcard = Environment.getExternalStorageDirectory();
         String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
         String name = "build_mask_texture";
         String fileName = path + name + "_obj";
 
         try {
-            String[] ss = obj_str.split("\n");
             int i = 0;
             FileWriter writer = new FileWriter(fileName);
             for (String s : ss) {
@@ -577,5 +592,49 @@ public class BuildMaskActivity extends AppCompatActivity {
             e.printStackTrace();
             Log.i(TAG, e.toString());
         }
+    }
+
+    private List<String> readVerticesFromTxt() {
+        File sdcard = Environment.getExternalStorageDirectory();
+        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        String name = "build_mask_texture_vertices.txt";
+        String fileName = path + name;
+
+        final List<String> vertices = new ArrayList<>();
+        try {
+            FileReader fileReader = new FileReader(fileName);
+            BufferedReader br = new BufferedReader(fileReader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                vertices.add(str);
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return vertices;
+    }
+
+    private List<String> readCoordinatesFromTxt() {
+        File sdcard = Environment.getExternalStorageDirectory();
+        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        String name = "build_mask_texture_coordinates.txt";
+        String fileName = path + name;
+
+        final List<String> coordinate = new ArrayList<>();
+        try {
+            FileReader fileReader = new FileReader(fileName);
+            BufferedReader br = new BufferedReader(fileReader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                coordinate.add(str);
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return coordinate;
     }
 }
