@@ -137,6 +137,7 @@ public class BuildMaskActivity extends AppCompatActivity {
             ArrayList<Point> landmarks = faceList.get(0).getFaceLandmarks();
             saveLandmarkTxt(landmarks, textureDir, textureName);
             saveLandmark2Vertices(landmarks, textureDir, textureName);
+            saveUVMapCoordinate(landmarks, textureDir, textureName);
 
             runOnUiThread(new Runnable() {
                 @Override
@@ -401,5 +402,136 @@ public class BuildMaskActivity extends AppCompatActivity {
         Point point1 = landmarks.get(p1);
         Point point2 = landmarks.get(p2);
         return new Point((point1.x+point2.x)/2, (point1.y+point2.y)/2);
+    }
+
+    private void saveUVMapCoordinate(ArrayList<Point> landmarks, String path, String name) {
+        ArrayList<Point> coordinates = new ArrayList<>();
+        for (int i=0; i<40; i++) {
+            coordinates.add(new Point(0, 0));
+        }
+
+        for (int i=0; i<coordinates.size(); i++) {
+            coordinates.set(i, getCoordinateByIndex(landmarks, i));
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat(".0000");
+        String fileName = path + name + "_coordinates.txt";
+        try {
+            int i = 0;
+            FileWriter writer = new FileWriter(fileName);
+            for (Point point : coordinates) {
+                float x = point.x / 1024.0f;
+                float y = 1 - point.y / 1024.0f;
+                String string = "vt " + decimalFormat.format(x) + " " + decimalFormat.format(y) + "\n";
+                Log.i(TAG, "write coordinates[" + String.valueOf(i) + "]: " + string);
+                i++;
+                writer.write(string);
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.i(TAG, e.toString());
+        }
+    }
+
+    private Point getCoordinateByIndex(ArrayList<Point> landmarks, int index) {
+        switch (index) {
+            case 0:
+                return landmarks.get(18);
+            case 1:
+                return landmarks.get(0);
+            case 2:
+                return landmarks.get(36);
+            case 3:
+                return getDoNotKnowHowToSay(landmarks, 17, 0, 1);
+            case 4:
+                return getIntersectPoint(landmarks, 5, 3);
+            case 5:
+                return getIntersectPoint(landmarks, 6, 5);
+            case 6:
+                return landmarks.get(48);
+            case 7:
+                return getDoNotKnowHowToSay(landmarks, 8, 6, 7);
+            case 8:
+                return landmarks.get(57);
+            case 9:
+                return landmarks.get(62);
+            case 10:
+                return landmarks.get(33);
+            case 11:
+                return landmarks.get(31);
+            case 12:
+                return getMeanPoint(landmarks, 31, 35);
+            case 13:
+                return landmarks.get(27);
+            case 14:
+                return getMeanPoint(landmarks, 40, 41);
+            case 15:
+                return landmarks.get(39);
+            case 16:
+                return landmarks.get(20);
+            case 17:
+                return getMeanPoint(landmarks, 37, 38);
+            case 18:
+                return getMeanPoint(landmarks, 20, 23);
+            case 19:
+                return landmarks.get(23);
+            case 20:
+                return landmarks.get(42);
+            case 21:
+                return landmarks.get(35);
+            case 22:
+                return getMeanPoint(landmarks, 46, 47);
+            case 23:
+                return landmarks.get(45);
+            case 24:
+                return getMeanPoint(landmarks, 43, 44);
+            case 25:
+                return landmarks.get(25);
+            case 26:
+                return landmarks.get(16);
+            case 27:
+                return getDoNotKnowHowToSay(landmarks, 26, 15, 16);
+            case 28:
+                return landmarks.get(54);
+            case 29:
+                return getIntersectPoint(landmarks, 10, 12);
+            case 30:
+                return getIntersectPoint(landmarks, 11, 13);
+            case 31:
+                return landmarks.get(15);
+            case 32:
+                return landmarks.get(12);
+            case 33:
+                return landmarks.get(10);
+            case 34:
+                return landmarks.get(8);
+            case 35:
+                return landmarks.get(6);
+            case 36:
+                return landmarks.get(1);
+            case 37:
+                return landmarks.get(4);
+            case 38:
+                return getMeanPoint(landmarks, 36, 39);
+            case 39:
+                return getMeanPoint(landmarks, 42, 45);
+            default:
+                return landmarks.get(0);
+        }
+    }
+
+    private Point getIntersectPoint(ArrayList<Point> landmarks, int p1, int p2) {
+        Point point1 = landmarks.get(p1);
+        Point point2 = landmarks.get(p2);
+        return new Point(point1.x, point2.y);
+    }
+
+    private Point getDoNotKnowHowToSay(ArrayList<Point> landmarks, int p1, int p2, int p3) {
+        Point point1 = landmarks.get(p1);
+        Point point2 = landmarks.get(p2);
+        Point point3 = landmarks.get(p3);
+        return new Point(point1.x, (point2.y + point3.y)/2);
     }
 }
