@@ -66,6 +66,8 @@ public class BuildMaskActivity extends AppCompatActivity {
     FaceDet mFaceDet;
     private ProgressDialog mDialog;
 
+    private String mCurrentImgPath = null;
+
 
 //    @Override
 //    protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +109,7 @@ public class BuildMaskActivity extends AppCompatActivity {
 
     @Background
     protected void runDetectAsync(@NonNull final String imgPath) {
+        mCurrentImgPath = imgPath;
         showDialog();
 
         final String targetPath = Constants.getFaceShapeModelPath();
@@ -132,7 +135,7 @@ public class BuildMaskActivity extends AppCompatActivity {
 
         File sdcard = Environment.getExternalStorageDirectory();
         String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String textureName = "build_mask_texture";
+        String textureName = FileUtils.getMD5(imgPath);
         FileUtils.saveBitmapToFile(this, bitmap, textureDir, textureName + ".jpg");
         bitmap.recycle();
         bitmap = null;
@@ -542,6 +545,10 @@ public class BuildMaskActivity extends AppCompatActivity {
     }
 
     private void doCreateObjFile() {
+        if (mCurrentImgPath == null) {
+            Toast.makeText(BuildMaskActivity.this, "没有找到人脸图片", Toast.LENGTH_SHORT).show();
+            return;
+        }
         // 读取预设模型base_mask_obj
         StringBuilder stringBuilder = new StringBuilder();
         InputStream is = getResources().openRawResource(R.raw.base_mask_obj);
@@ -575,7 +582,7 @@ public class BuildMaskActivity extends AppCompatActivity {
         // 保存
         File sdcard = Environment.getExternalStorageDirectory();
         String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String name = "build_mask_texture";
+        String name = FileUtils.getMD5(mCurrentImgPath);
         String fileName = path + name + "_obj";
 
         try {
@@ -592,12 +599,19 @@ public class BuildMaskActivity extends AppCompatActivity {
             e.printStackTrace();
             Log.i(TAG, e.toString());
         }
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(BuildMaskActivity.this, "Done!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private List<String> readVerticesFromTxt() {
         File sdcard = Environment.getExternalStorageDirectory();
         String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String name = "build_mask_texture_vertices.txt";
+        String name = FileUtils.getMD5(mCurrentImgPath) + "_vertices.txt";
         String fileName = path + name;
 
         final List<String> vertices = new ArrayList<>();
@@ -619,7 +633,7 @@ public class BuildMaskActivity extends AppCompatActivity {
     private List<String> readCoordinatesFromTxt() {
         File sdcard = Environment.getExternalStorageDirectory();
         String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String name = "build_mask_texture_coordinates.txt";
+        String name = FileUtils.getMD5(mCurrentImgPath) + "_coordinates.txt";
         String fileName = path + name;
 
         final List<String> coordinate = new ArrayList<>();
