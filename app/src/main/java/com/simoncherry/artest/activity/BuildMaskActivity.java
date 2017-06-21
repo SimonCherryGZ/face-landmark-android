@@ -79,6 +79,11 @@ public class BuildMaskActivity extends AppCompatActivity {
         startActivityForResult(galleryIntent, RESULT_LOAD_IMG);
     }
 
+    @Click({R.id.btn_create_obj})
+    protected void createOBJ() {
+        doCreateObjFile();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -533,5 +538,44 @@ public class BuildMaskActivity extends AppCompatActivity {
         Point point2 = landmarks.get(p2);
         Point point3 = landmarks.get(p3);
         return new Point(point1.x, (point2.y + point3.y)/2);
+    }
+
+    private void doCreateObjFile() {
+        StringBuilder stringBuilder = new StringBuilder();
+        InputStream is = getResources().openRawResource(R.raw.base_mask_obj);
+        try {
+            InputStreamReader reader = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(reader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                stringBuilder.append(str).append("\n");
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String obj_str = stringBuilder.toString();
+        Log.i(TAG, "read base_mask_obj: " + obj_str);
+
+        File sdcard = Environment.getExternalStorageDirectory();
+        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        String name = "build_mask_texture";
+        String fileName = path + name + "_obj";
+
+        try {
+            String[] ss = obj_str.split("\n");
+            int i = 0;
+            FileWriter writer = new FileWriter(fileName);
+            for (String s : ss) {
+                Log.i(TAG, "write obj[" + String.valueOf(i) + "]: " + s);
+                i++;
+                writer.write(s + "\n");
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.i(TAG, e.toString());
+        }
     }
 }
