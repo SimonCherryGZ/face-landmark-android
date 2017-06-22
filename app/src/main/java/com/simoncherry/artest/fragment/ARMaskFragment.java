@@ -43,6 +43,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -261,6 +262,8 @@ public class ARMaskFragment extends AExampleFragment {
         CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
         CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
         CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
+        Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
+        Button btnSwapFace = (Button) view.findViewById(R.id.btn_swap_face);
 
         checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -292,6 +295,30 @@ public class ARMaskFragment extends AExampleFragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 ((ARMaskFragment.AccelerometerRenderer) mRenderer).toggleWireframe();
+            }
+        });
+
+        btnBuildModel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mOnGetPreviewListener.setIsNeedMask(true);
+            }
+        });
+
+        btnSwapFace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        String[] pathArray = new String[2];
+                        pathArray[0] = "/storage/emulated/0/dlib/20130821040137899.jpg";
+                        pathArray[1] = "/storage/emulated/0/BuildMask/capture_face.jpg";
+                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
+                        OBJUtils.swapFace(getContext(), pathArray, texture);
+                        isBuildMask = true;
+                    }
+                });
             }
         });
     }

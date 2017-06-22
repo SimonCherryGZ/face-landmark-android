@@ -108,11 +108,11 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btn_reset_model"
+            android:id="@+id/btn_build_model"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="显示原模型"/>
+            android:text="创建人脸模型"/>
 
         <Button
             android:id="@+id/btn_swap_face"

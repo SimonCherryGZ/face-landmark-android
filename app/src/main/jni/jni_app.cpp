@@ -417,7 +417,7 @@ JNIEXPORT jstring JNICALL Java_com_simoncherry_artest_util_JNIUtils_doFaceSwap
     parameters.push_back(100);
     std::string result_path = "/sdcard/face_swap_result.jpg";
     imwrite(result_path, output, parameters);
-    LOGE("doAverageFace End");
+    LOGE("doFaceSwap End");
     return env->NewStringUTF(result_path.c_str());
 }
 

@@ -65,7 +65,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
     private Bitmap mRGBframeBitmap = null;
     private Bitmap mCroppedBitmap = null;
 
-    private boolean mIsNeedMask = true;
+    private boolean mIsNeedMask = false;
     private boolean mIsComputing = false;
     private Handler mInferenceHandler;
 
@@ -337,6 +337,10 @@ public class OnGetImageListener implements OnImageAvailableListener {
         } else {
             Log.e("rotationList: ", "null");
         }
+    }
+
+    public void setIsNeedMask(boolean mIsNeedMask) {
+        this.mIsNeedMask = mIsNeedMask;
     }
 
     public boolean isWindowVisible() {

@@ -95,7 +95,7 @@ public class OBJUtils {
         Log.e(TAG, "createVerticesAndCoordinates done!");
     }
 
-    private void createTexture(Context context, String srcPath, String dstPath) {
+    private static void createTexture(Context context, String srcPath, String dstPath) {
         Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(srcPath, 1024, 1024);
         int faceWidth = face.getWidth();
         int faceHeight = face.getHeight();
@@ -519,5 +519,27 @@ public class OBJUtils {
         }
 
         return coordinate;
+    }
+
+    public static void swapFace(Context context, String[] pathArray,  String resultPath) {
+        File sdcard = Environment.getExternalStorageDirectory();
+        String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+
+        for (int i=0; i<2; i++) {
+            String landmarkName = FileUtils.getMD5(pathArray[i]) + "_original.txt";
+            File file = new File(landmarkDir + landmarkName);
+            if (!file.exists()) {
+                createLandmark(pathArray[i]);
+            }
+        }
+
+        String swapResult = JNIUtils.doFaceSwap(pathArray);
+
+        if (swapResult != null) {
+            final File file = new File(swapResult);
+            if (file.exists()) {
+                createTexture(context, swapResult, resultPath);
+            }
+        }
     }
 }
