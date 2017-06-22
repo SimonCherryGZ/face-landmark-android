@@ -169,7 +169,9 @@ public class BuildMaskActivity extends AppCompatActivity {
     private void doTask1(String imgPath) {
         mCurrentImgPath = imgPath;
         if (mCurrentImgPath != null) {
+            ivFace.setImageBitmap(BitmapUtils.decodeSampledBitmapFromFilePath(mCurrentImgPath, 1024, 1024));
             Toast.makeText(this, "Img Path:" + mCurrentImgPath, Toast.LENGTH_SHORT).show();
+
             File sdcard = Environment.getExternalStorageDirectory();
             String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
             String landmarkName = FileUtils.getMD5(mCurrentImgPath);
@@ -196,6 +198,7 @@ public class BuildMaskActivity extends AppCompatActivity {
         pathArray[0] = swapPath;
         pathArray[1] = mCurrentImgPath;
 
+        showDialog();
         for (int i=0; i<2; i++) {
             String landmarkName = FileUtils.getMD5(pathArray[i]) + "_original.txt";
             File file = new File(landmarkDir + landmarkName);
@@ -203,6 +206,7 @@ public class BuildMaskActivity extends AppCompatActivity {
                 createLandmark(pathArray[i]);
             }
         }
+        dismissDialog();
 
         doFaceSwap(pathArray);
     }
@@ -243,10 +247,7 @@ public class BuildMaskActivity extends AppCompatActivity {
         dismissDialog();
     }
 
-    @Background
     protected void createLandmark(@NonNull final String imgPath) {
-        showDialog();
-
         final String targetPath = Constants.getFaceShapeModelPath();
         if (!new File(targetPath).exists()) {
             throw new RuntimeException("cannot find shape_predictor_68_face_landmarks.dat");
@@ -277,8 +278,6 @@ public class BuildMaskActivity extends AppCompatActivity {
                 }
             });
         }
-
-        dismissDialog();
     }
 
     @Background
