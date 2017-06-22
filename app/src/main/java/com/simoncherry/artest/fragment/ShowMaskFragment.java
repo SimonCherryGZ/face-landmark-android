@@ -14,6 +14,9 @@ import com.simoncherry.artest.util.FileUtils;
 
 import org.rajawali3d.Object3D;
 import org.rajawali3d.cameras.ArcballCamera;
+import org.rajawali3d.debug.CoordinateTrident;
+import org.rajawali3d.debug.DebugCamera;
+import org.rajawali3d.debug.DebugLight;
 import org.rajawali3d.debug.DebugVisualizer;
 import org.rajawali3d.debug.GridFloor;
 import org.rajawali3d.lights.DirectionalLight;
@@ -63,19 +66,16 @@ public class ShowMaskFragment extends AExampleFragment {
         protected void initScene() {
             try {
                 DirectionalLight light = new DirectionalLight();
-                light.setLookAt(1, -1, 1);
+                light.setLookAt(0, 2, 0);
                 light.enableLookAt();
-                light.setPower(1.5f);
-                getCurrentScene().addLight(light);
-
-                light = new DirectionalLight();
-                light.setLookAt(-1, 1, -1);
-                light.enableLookAt();
-                light.setPower(1.5f);
+                light.setPosition(0, 2, 5);
+                light.setPower(1.0f);
                 getCurrentScene().addLight(light);
 
                 DebugVisualizer debugViz = new DebugVisualizer(this);
                 debugViz.addChild(new GridFloor());
+                debugViz.addChild(new DebugLight(light, 0x999900, 1));
+                debugViz.addChild(new CoordinateTrident());
                 getCurrentScene().addChild(debugViz);
 
                 String objDir ="BuildMask" + File.separator;
@@ -87,17 +87,12 @@ public class ShowMaskFragment extends AExampleFragment {
                 monkey.getMaterial().removeTexture(texture);
                 monkey.setScale(0.65f);
 
-//                Material material = new Material();
-//                material.enableLighting(true);
-//                material.setDiffuseMethod(new DiffuseMethod.Lambert());
-//                material.setColor(0x990000);
-//                monkey.setMaterial(material);
-
                 File sdcard = Environment.getExternalStorageDirectory();
                 String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
                 String textureName = FileUtils.getMD5(mImagePath) + ".jpg";
                 Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(textureDir + textureName, 1024, 1024);
                 monkey.getMaterial().addTexture(new Texture("canvas", bitmap));
+                monkey.getMaterial().enableLighting(false);
 
                 getCurrentScene().addChild(monkey);
 
