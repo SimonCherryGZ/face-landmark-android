@@ -1,6 +1,7 @@
 package com.simoncherry.artest.activity;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 import com.alibaba.fastjson.JSON;
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.util.BitmapUtils;
+import com.simoncherry.artest.util.DialogUtils;
 import com.simoncherry.artest.util.FileUtils;
 import com.simoncherry.dlib.Constants;
 import com.simoncherry.dlib.FaceDet;
@@ -62,7 +64,6 @@ public class BuildMaskActivity extends AppCompatActivity {
     @ViewById(R.id.btn_load_obj)
     protected Button btnLoadOBJ;
 
-    protected String mTestImgPath;
     FaceDet mFaceDet;
     private ProgressDialog mDialog;
 
@@ -84,7 +85,26 @@ public class BuildMaskActivity extends AppCompatActivity {
 
     @Click({R.id.btn_create_obj})
     protected void createOBJ() {
-        doCreateObjFile();
+        if (mCurrentImgPath == null) {
+            Toast.makeText(BuildMaskActivity.this, "没有找到人脸图片", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        File sdcard = Environment.getExternalStorageDirectory();
+        String objDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        String objName = FileUtils.getMD5(mCurrentImgPath);
+        String objPath = objDir + objName + "_obj";
+        File file = new File(objPath);
+        if (!file.exists()) {
+            doCreateObjFile();
+        } else {
+            DialogUtils.showDialog(this, "该人脸OBJ文件已存在", "是否重新生成？", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    doCreateObjFile();
+                }
+            });
+        }
     }
 
     @Click({R.id.btn_load_obj})
@@ -107,11 +127,25 @@ public class BuildMaskActivity extends AppCompatActivity {
             Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
             cursor.moveToFirst();
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-            mTestImgPath = cursor.getString(columnIndex);
+            mCurrentImgPath = cursor.getString(columnIndex);
             cursor.close();
-            if (mTestImgPath != null) {
-                runDetectAsync(mTestImgPath);
-                Toast.makeText(this, "Img Path:" + mTestImgPath, Toast.LENGTH_SHORT).show();
+            if (mCurrentImgPath != null) {
+                Toast.makeText(this, "Img Path:" + mCurrentImgPath, Toast.LENGTH_SHORT).show();
+                File sdcard = Environment.getExternalStorageDirectory();
+                String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+                String landmarkName = FileUtils.getMD5(mCurrentImgPath);
+                String landmarkPath = landmarkDir + landmarkName + ".txt";
+                File file = new File(landmarkPath);
+                if (!file.exists()) {
+                    runDetectAsync(mCurrentImgPath);
+                } else {
+                    DialogUtils.showDialog(this, "该人脸关键点txt已存在", "是否重新生成？", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            runDetectAsync(mCurrentImgPath);
+                        }
+                    });
+                }
             }
         } else {
             Toast.makeText(this, "You haven't picked Image", Toast.LENGTH_LONG).show();
@@ -556,11 +590,6 @@ public class BuildMaskActivity extends AppCompatActivity {
     }
 
     private void doCreateObjFile() {
-        if (mCurrentImgPath == null) {
-            Toast.makeText(BuildMaskActivity.this, "没有找到人脸图片", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         File sdcard = Environment.getExternalStorageDirectory();
         String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator + "base_mask.mtl";
         FileUtils.copyFileFromRawToOthers(this, R.raw.base_mask, path);
