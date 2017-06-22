@@ -24,6 +24,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
@@ -63,6 +65,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
     private Bitmap mRGBframeBitmap = null;
     private Bitmap mCroppedBitmap = null;
 
+    private boolean mIsNeedMask = true;
     private boolean mIsComputing = false;
     private Handler mInferenceHandler;
 
@@ -210,86 +213,22 @@ public class OnGetImageListener implements OnImageAvailableListener {
                         synchronized (OnGetImageListener.this) {
                             results = mFaceDet.detect(mCroppedBitmap);
                         }
-//                        long endTime = System.currentTimeMillis();
-//                        mTransparentTitleView.setText("Time cost: " + String.valueOf((endTime - startTime) / 1000f) + " sec");
+
                         // Draw on bitmap
                         if (results != null) {
+                            VisionDetRet ret = results.get(0);
+                            //Canvas canvas = new Canvas(mCroppedBitmap);
+                            //drawLandmarks(canvas, ret);
+                            // add by simon at 2017/05/01 -- 描绘三维头部姿态
+                            //drawHeadPose(canvas, ret);
+                            // add by simon at 2017/05/04 -- 获取3轴旋转角度
+                            handleRotation(ret);
+                            // add by simon at 2017/05/07
+                            handleTransition(ret);
+                            //handleRotation2(ret);
+
                             if (landMarkListener != null) {
                                 landMarkListener.onLandmarkChange(results);
-                            }
-
-                            for (final VisionDetRet ret : results) {
-//                                float resizeRatio = 1.0f;
-//                                Rect bounds = new Rect();
-//                                bounds.left = (int) (ret.getLeft() * resizeRatio);
-//                                bounds.top = (int) (ret.getTop() * resizeRatio);
-//                                bounds.right = (int) (ret.getRight() * resizeRatio);
-//                                bounds.bottom = (int) (ret.getBottom() * resizeRatio);
-//                                Canvas canvas = new Canvas(mCroppedBitmap);
-//                                canvas.drawRect(bounds, mFaceLandmardkPaint);
-//
-//                                // Draw landmark
-//                                ArrayList<Point> landmarks = ret.getFaceLandmarks();
-//                                for (Point point : landmarks) {
-//                                    int pointX = (int) (point.x * resizeRatio);
-//                                    int pointY = (int) (point.y * resizeRatio);
-//                                    canvas.drawCircle(pointX, pointY, 2, mFaceLandmardkPaint);
-//                                }
-
-//                                // add by simon at 2017/05/01 -- 描绘三维头部姿态
-//                                ArrayList<Point> headPoses = ret.getPosePoints();
-//                                if (headPoses != null) {
-//                                    //Log.e("headPoses: ", headPoses.toString());
-//                                    int temp = 0;
-//                                    for (Point point : headPoses) {
-//                                        int pointX = (int) (point.x * resizeRatio);
-//                                        int pointY = (int) (point.y * resizeRatio);
-//                                        if (temp == 0) {
-//                                            mFaceLandmardkPaint.setColor(Color.RED);
-//                                        } else if (temp == 1) {
-//                                            mFaceLandmardkPaint.setColor(Color.GREEN);
-//                                        } else if (temp == 2) {
-//                                            mFaceLandmardkPaint.setColor(Color.BLUE);
-//                                        }
-//                                        canvas.drawLine(landmarks.get(30).x, landmarks.get(30).y, pointX, pointY, mFaceLandmardkPaint);
-//                                        temp++;
-//                                    }
-//                                    mFaceLandmardkPaint.setColor(Color.YELLOW);
-//                                } else {
-//                                    Log.e("headPoses: ", "null");
-//                                }
-
-                                // add by simon at 2017/05/04 -- 获取3轴旋转角度
-                                ArrayList<Float> rotateList = ret.getRotate();
-                                if (rotateList != null && rotateList.size() >= 3) {
-                                    Log.e("rotateList: ", rotateList.toString());
-                                    if (landMarkListener != null) {
-                                        landMarkListener.onRotateChange(rotateList.get(0), rotateList.get(1), rotateList.get(2));
-                                    }
-                                } else {
-                                    Log.e("rotateList: ", "null");
-                                }
-
-                                // add by simon at 2017/05/07
-                                ArrayList<Float> transList = ret.getTrans();
-                                if (transList != null && transList.size() >= 3) {
-                                    Log.e("transList: ", transList.toString());
-                                    if (landMarkListener != null) {
-                                        landMarkListener.onTransChange(transList.get(0), transList.get(1), transList.get(2));
-                                    }
-                                } else {
-                                    Log.e("transList: ", "null");
-                                }
-
-//                                ArrayList<Double> rotationList = ret.getRotation();
-//                                if (rotationList != null && rotationList.size() >= 16) {
-//                                    Log.e("rotationList: ", rotationList.toString());
-//                                    if (landMarkListener != null) {
-//                                        landMarkListener.onMatrixChange(rotationList);
-//                                    }
-//                                } else {
-//                                    Log.e("rotationList: ", "null");
-//                                }
                             }
                         }
 
@@ -302,6 +241,99 @@ public class OnGetImageListener implements OnImageAvailableListener {
                 });
 
         Trace.endSection();
+    }
+
+    private void drawLandmarks(Canvas canvas, VisionDetRet ret) {
+        float resizeRatio = 1.0f;
+        Rect bounds = new Rect();
+        bounds.left = (int) (ret.getLeft() * resizeRatio);
+        bounds.top = (int) (ret.getTop() * resizeRatio);
+        bounds.right = (int) (ret.getRight() * resizeRatio);
+        bounds.bottom = (int) (ret.getBottom() * resizeRatio);
+        canvas.drawRect(bounds, mFaceLandmardkPaint);
+
+        // Draw landmark
+        ArrayList<Point> landmarks = ret.getFaceLandmarks();
+        for (Point point : landmarks) {
+            int pointX = (int) (point.x * resizeRatio);
+            int pointY = (int) (point.y * resizeRatio);
+            canvas.drawCircle(pointX, pointY, 2, mFaceLandmardkPaint);
+        }
+    }
+
+    private void drawHeadPose(Canvas canvas, VisionDetRet ret) {
+        float resizeRatio = 1.0f;
+        ArrayList<Point> landmarks = ret.getFaceLandmarks();
+        ArrayList<Point> headPoses = ret.getPosePoints();
+        if (headPoses != null) {
+            //Log.e("headPoses: ", headPoses.toString());
+            int temp = 0;
+            for (Point point : headPoses) {
+                int pointX = (int) (point.x * resizeRatio);
+                int pointY = (int) (point.y * resizeRatio);
+                if (temp == 0) {
+                    mFaceLandmardkPaint.setColor(Color.RED);
+                } else if (temp == 1) {
+                    mFaceLandmardkPaint.setColor(Color.GREEN);
+                } else if (temp == 2) {
+                    mFaceLandmardkPaint.setColor(Color.BLUE);
+                }
+                canvas.drawLine(landmarks.get(30).x, landmarks.get(30).y, pointX, pointY, mFaceLandmardkPaint);
+                temp++;
+            }
+            mFaceLandmardkPaint.setColor(Color.YELLOW);
+        } else {
+            Log.e("headPoses: ", "null");
+        }
+    }
+
+    private void handleRotation(VisionDetRet ret) {
+        ArrayList<Float> rotateList = ret.getRotate();
+        if (rotateList != null && rotateList.size() >= 3) {
+            Log.e("rotateList: ", rotateList.toString());
+            if (landMarkListener != null) {
+                float x = rotateList.get(0);
+                float y = rotateList.get(1);
+                float z = rotateList.get(2);
+                landMarkListener.onRotateChange(x, y, z);
+
+                if (mIsNeedMask) {
+                    boolean xIsGood = (x >= -12) && (x <= -8);
+                    boolean yIsGood = (y >= -2) && (y <= 2);
+                    boolean zIsGood = (z >= -2) && (z <= 2);
+                    if (xIsGood && yIsGood && zIsGood) {
+                        Log.e("rotateList: ", "good rotation to build 3d face model");
+                        mIsNeedMask = false;
+                    }
+                }
+            }
+        } else {
+            Log.e("rotateList: ", "null");
+        }
+    }
+
+    private void handleTransition(VisionDetRet ret) {
+        ArrayList<Float> transList = ret.getTrans();
+        if (transList != null && transList.size() >= 3) {
+            Log.e("transList: ", transList.toString());
+            if (landMarkListener != null) {
+                landMarkListener.onTransChange(transList.get(0), transList.get(1), transList.get(2));
+            }
+        } else {
+            Log.e("transList: ", "null");
+        }
+    }
+
+    private void handleRotation2(VisionDetRet ret) {
+        ArrayList<Double> rotationList = ret.getRotation();
+        if (rotationList != null && rotationList.size() >= 16) {
+            Log.e("rotationList: ", rotationList.toString());
+            if (landMarkListener != null) {
+                landMarkListener.onMatrixChange(rotationList);
+            }
+        } else {
+            Log.e("rotationList: ", "null");
+        }
     }
 
     public boolean isWindowVisible() {

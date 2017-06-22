@@ -25,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.simoncherry.artest.fragment.ARMaskFragment;
 import com.simoncherry.artest.fragment.CameraConnectionFragment;
 import com.simoncherry.artest.R;
 
@@ -52,7 +53,8 @@ public class CameraActivity extends AppCompatActivity {
         if (null == savedInstanceState) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container, CameraConnectionFragment.newInstance())
+                    //.replace(R.id.container, CameraConnectionFragment.newInstance())
+                    .replace(R.id.container, ARMaskFragment.newInstance())
                     .commit();
         }
     }
