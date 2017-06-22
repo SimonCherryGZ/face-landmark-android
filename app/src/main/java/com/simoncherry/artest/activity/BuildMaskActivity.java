@@ -26,6 +26,7 @@ import com.simoncherry.artest.R;
 import com.simoncherry.artest.util.BitmapUtils;
 import com.simoncherry.artest.util.DialogUtils;
 import com.simoncherry.artest.util.FileUtils;
+import com.simoncherry.artest.util.JNIUtils;
 import com.simoncherry.dlib.Constants;
 import com.simoncherry.dlib.FaceDet;
 import com.simoncherry.dlib.VisionDetRet;
@@ -53,7 +54,8 @@ import hugo.weaving.DebugLog;
 public class BuildMaskActivity extends AppCompatActivity {
 
     private static final String TAG = BuildMaskActivity.class.getSimpleName();
-    private static final int RESULT_LOAD_IMG = 1;
+    private static final int RESULT_LOAD_IMG = 123;
+    private static final int RESULT_FOR_SWAP = 456;
 
     @ViewById(R.id.iv_face)
     protected ImageView ivFace;
@@ -63,6 +65,8 @@ public class BuildMaskActivity extends AppCompatActivity {
     protected Button btnCreateOBJ;
     @ViewById(R.id.btn_load_obj)
     protected Button btnLoadOBJ;
+    @ViewById(R.id.btn_swap_face)
+    protected Button btnSwapFace;
 
     FaceDet mFaceDet;
     private ProgressDialog mDialog;
@@ -118,50 +122,174 @@ public class BuildMaskActivity extends AppCompatActivity {
         }
     }
 
+    @Click({R.id.btn_swap_face})
+    protected void swapFaceAndCreateNewTexture() {
+        if (mCurrentImgPath == null) {
+            Toast.makeText(BuildMaskActivity.this, "没有找到人脸图片", Toast.LENGTH_SHORT).show();
+        } else {
+//            Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(mCurrentImgPath, 1024, 1024);
+//            int w = bitmap.getWidth(), h = bitmap.getHeight();
+//            int[] pix = new int[w * h];
+//            bitmap.getPixels(pix, 0, w, 0, 0, w, h);
+//
+//            int [] resultPixes = JNIUtils.doGrayScale(pix, w, h);
+//            bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565);
+//            bitmap.setPixels(resultPixes, 0, w, 0, 0, w, h);
+//            ivFace.setImageBitmap(bitmap);
+
+            Toast.makeText(BuildMaskActivity.this, "Pick face for swap", Toast.LENGTH_SHORT).show();
+            Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(galleryIntent, RESULT_FOR_SWAP);
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RESULT_LOAD_IMG && resultCode == RESULT_OK && null != data) {
+        if (resultCode == RESULT_OK && null != data) {
             Uri selectedImage = data.getData();
             String[] filePathColumn = {MediaStore.Images.Media.DATA};
             Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
             cursor.moveToFirst();
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-            mCurrentImgPath = cursor.getString(columnIndex);
-            cursor.close();
-            if (mCurrentImgPath != null) {
-                Toast.makeText(this, "Img Path:" + mCurrentImgPath, Toast.LENGTH_SHORT).show();
-                File sdcard = Environment.getExternalStorageDirectory();
-                String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-                String landmarkName = FileUtils.getMD5(mCurrentImgPath);
-                String landmarkPath = landmarkDir + landmarkName + ".txt";
-                File file = new File(landmarkPath);
-                if (!file.exists()) {
-                    runDetectAsync(mCurrentImgPath);
-                } else {
-                    DialogUtils.showDialog(this, "该人脸关键点txt已存在", "是否重新生成？", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            runDetectAsync(mCurrentImgPath);
-                        }
-                    });
-                }
+            String imgPath = cursor.getString(columnIndex);
+
+            if (requestCode == RESULT_LOAD_IMG) {
+                doTask1(imgPath);
+            } else {
+                doTask2(imgPath);
             }
+
+            cursor.close();
         } else {
             Toast.makeText(this, "You haven't picked Image", Toast.LENGTH_LONG).show();
         }
     }
 
-    @Background
-    protected void runDetectAsync(@NonNull final String imgPath) {
+    private void doTask1(String imgPath) {
         mCurrentImgPath = imgPath;
+        if (mCurrentImgPath != null) {
+            Toast.makeText(this, "Img Path:" + mCurrentImgPath, Toast.LENGTH_SHORT).show();
+            File sdcard = Environment.getExternalStorageDirectory();
+            String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+            String landmarkName = FileUtils.getMD5(mCurrentImgPath);
+            String landmarkPath = landmarkDir + landmarkName + ".txt";
+            File file = new File(landmarkPath);
+            if (!file.exists()) {
+                createVerticesAndCoordinates(mCurrentImgPath);
+            } else {
+                DialogUtils.showDialog(this, "该人脸关键点txt已存在", "是否重新生成？", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        createVerticesAndCoordinates(mCurrentImgPath);
+                    }
+                });
+            }
+        }
+    }
+
+    private void doTask2(String swapPath) {
+        File sdcard = Environment.getExternalStorageDirectory();
+        String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+
+        String[] pathArray = new String[2];
+        pathArray[0] = swapPath;
+        pathArray[1] = mCurrentImgPath;
+
+        for (int i=0; i<2; i++) {
+            String landmarkName = FileUtils.getMD5(pathArray[i]) + "_original.txt";
+            File file = new File(landmarkDir + landmarkName);
+            if (!file.exists()) {
+                createLandmark(pathArray[i]);
+            }
+        }
+
+        doFaceSwap(pathArray);
+    }
+
+    @Background
+    protected void doFaceSwap(String[] pathArray) {
+        showDialog();
+        final String result = JNIUtils.doFaceSwap(pathArray);
+
+        if (result != null) {
+            final File file = new File(result);
+            if (file.exists()) {
+                createTexture(result, mCurrentImgPath);
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ivFace.setImageBitmap(BitmapUtils.decodeSampledBitmapFromFilePath(result, 1024, 1024));
+                    }
+                });
+            } else {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(BuildMaskActivity.this, "cannot do face swap!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        } else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(BuildMaskActivity.this, "cannot do face swap!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        dismissDialog();
+    }
+
+    @Background
+    protected void createLandmark(@NonNull final String imgPath) {
         showDialog();
 
         final String targetPath = Constants.getFaceShapeModelPath();
         if (!new File(targetPath).exists()) {
             throw new RuntimeException("cannot find shape_predictor_68_face_landmarks.dat");
         }
-        // Init
+
+        if (mFaceDet == null) {
+            mFaceDet = new FaceDet(Constants.getFaceShapeModelPath());
+        }
+
+        List<VisionDetRet> faceList = mFaceDet.detect(imgPath);
+        if (faceList != null && faceList.size() > 0) {
+            File sdcard = Environment.getExternalStorageDirectory();
+            String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+            String landmarkName = FileUtils.getMD5(imgPath) + "_original";
+            saveLandmarkTxt(faceList.get(0).getFaceLandmarks(), landmarkDir, landmarkName);
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(BuildMaskActivity.this, "Done!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "No face", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        dismissDialog();
+    }
+
+    @Background
+    protected void createVerticesAndCoordinates(@NonNull final String imgPath) {
+        showDialog();
+
+        final String targetPath = Constants.getFaceShapeModelPath();
+        if (!new File(targetPath).exists()) {
+            throw new RuntimeException("cannot find shape_predictor_68_face_landmarks.dat");
+        }
+
         if (mFaceDet == null) {
             mFaceDet = new FaceDet(Constants.getFaceShapeModelPath());
         }
@@ -211,6 +339,26 @@ public class BuildMaskActivity extends AppCompatActivity {
         }
 
         dismissDialog();
+    }
+
+    private void createTexture(String srcPath, String dstPath) {
+        Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(srcPath, 1024, 1024);
+        int faceWidth = face.getWidth();
+        int faceHeight = face.getHeight();
+        Bitmap bitmap = Bitmap.createBitmap(1024, 1024, Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawBitmap(face, (1024-faceWidth)/2, (1024-faceHeight)/2, null);
+        canvas.save(Canvas.ALL_SAVE_FLAG);
+        canvas.restore();
+        face.recycle();
+        face = null;
+
+        File sdcard = Environment.getExternalStorageDirectory();
+        String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        String textureName = FileUtils.getMD5(dstPath);
+        FileUtils.saveBitmapToFile(this, bitmap, textureDir, textureName + ".jpg");
+        bitmap.recycle();
+        bitmap = null;
     }
 
     @UiThread

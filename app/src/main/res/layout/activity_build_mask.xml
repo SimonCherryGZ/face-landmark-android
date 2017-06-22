@@ -13,10 +13,10 @@
 
     <ImageView
         android:id="@+id/iv_face"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="20dp"
         android:scaleType="centerInside"
         android:src="@mipmap/ic_launcher"/>
 
@@ -43,5 +43,13 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="20dp"
         android:text="加载obj模型"/>
+
+    <Button
+        android:id="@+id/btn_swap_face"
+        android:layout_width="200dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:text="换脸（生成新的贴图）"/>
 
 </LinearLayout>
