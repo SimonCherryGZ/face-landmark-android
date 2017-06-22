@@ -215,7 +215,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
                         }
 
                         // Draw on bitmap
-                        if (results != null) {
+                        if (results != null && results.size() > 0) {
                             VisionDetRet ret = results.get(0);
                             //Canvas canvas = new Canvas(mCroppedBitmap);
                             //drawLandmarks(canvas, ret);
@@ -299,11 +299,14 @@ public class OnGetImageListener implements OnImageAvailableListener {
 
                 if (mIsNeedMask) {
                     boolean xIsGood = (x >= -12) && (x <= -8);
-                    boolean yIsGood = (y >= -2) && (y <= 2);
-                    boolean zIsGood = (z >= -2) && (z <= 2);
+                    boolean yIsGood = (y >= -3) && (y <= 3);
+                    boolean zIsGood = (z >= -3) && (z <= 3);
                     if (xIsGood && yIsGood && zIsGood) {
                         Log.e("rotateList: ", "good rotation to build 3d face model");
                         mIsNeedMask = false;
+                        if (buildMaskListener != null) {
+                            buildMaskListener.onGetSuitableFace(mRGBframeBitmap, ret.getFaceLandmarks());
+                        }
                     }
                 }
             }
@@ -355,5 +358,15 @@ public class OnGetImageListener implements OnImageAvailableListener {
 
     public void setLandMarkListener(LandMarkListener landMarkListener) {
         this.landMarkListener = landMarkListener;
+    }
+
+    public interface BuildMaskListener {
+        void onGetSuitableFace(Bitmap bitmap, ArrayList<Point> landmarks);
+    }
+
+    private BuildMaskListener buildMaskListener;
+
+    public void setBuildMaskListener(BuildMaskListener buildMaskListener) {
+        this.buildMaskListener = buildMaskListener;
     }
 }

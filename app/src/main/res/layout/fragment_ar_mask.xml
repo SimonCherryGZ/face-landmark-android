@@ -41,7 +41,7 @@
         <com.simoncherry.artest.custom.TrasparentTitleView
             android:id="@+id/results"
             android:layout_width="match_parent"
-            android:layout_height="70dp"
+            android:layout_height="60dp"
             android:layout_alignParentTop="true" />
     </RelativeLayout>
 
@@ -61,13 +61,15 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:orientation="horizontal"
-        android:layout_gravity="bottom">
+        android:layout_gravity="top"
+        android:layout_marginTop="60dp">
 
         <CheckBox
             android:id="@+id/check_show_crop"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:textColor="@android:color/white"
             android:text="显示小图"
             android:checked="true"/>
 
@@ -76,6 +78,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:textColor="@android:color/white"
             android:text="显示模型"
             android:checked="true"/>
 
@@ -84,6 +87,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:textColor="@android:color/white"
             android:text="关键点"
             android:checked="true"/>
 
@@ -92,7 +96,29 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:textColor="@android:color/white"
             android:text="显示材质"
             android:checked="true"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_reset_model"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="显示原模型"/>
+
+        <Button
+            android:id="@+id/btn_swap_face"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="换脸"/>
     </LinearLayout>
 </FrameLayout>

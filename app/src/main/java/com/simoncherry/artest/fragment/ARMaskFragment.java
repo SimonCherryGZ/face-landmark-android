@@ -55,6 +55,7 @@ import com.simoncherry.artest.custom.TrasparentTitleView;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 import com.simoncherry.artest.util.BitmapUtils;
 import com.simoncherry.artest.util.FileUtils;
+import com.simoncherry.artest.util.OBJUtils;
 import com.simoncherry.dlib.VisionDetRet;
 
 import org.rajawali3d.Object3D;
@@ -96,6 +97,7 @@ public class ARMaskFragment extends AExampleFragment {
     private float lastY = 0;
     private float lastZ = 0;
     private boolean isDrawLandMark = true;
+    private boolean isBuildMask = false;
 
     private Quaternion mQuaternion = new Quaternion();
 
@@ -110,7 +112,6 @@ public class ARMaskFragment extends AExampleFragment {
 
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    private static final String FRAGMENT_DIALOG = "dialog";
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
@@ -591,7 +592,8 @@ public class ARMaskFragment extends AExampleFragment {
                 inferenceHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        for (final VisionDetRet ret : results) {
+                        if (results != null && results.size() > 0) {
+                            VisionDetRet ret = results.get(0);
                             float resizeRatio = 1.0f;
                             //float resizeRatio = 1.4286f;    // 预览尺寸 480x320  /  截取尺寸 336x224  (另外悬浮窗尺寸是 810x540)
                             Rect bounds = new Rect();
@@ -684,6 +686,20 @@ public class ARMaskFragment extends AExampleFragment {
                 }
             }
         });
+
+        mOnGetPreviewListener.setBuildMaskListener(new OnGetImageListener.BuildMaskListener() {
+            @Override
+            public void onGetSuitableFace(final Bitmap bitmap, final ArrayList<Point> landmarks) {
+                Log.e("rotateList", "onGetSuitableFace");
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        OBJUtils.buildModel(getContext(), bitmap, landmarks);
+                        isBuildMask = true;
+                    }
+                });
+            }
+        });
     }
 
     @DebugLog
@@ -752,28 +768,8 @@ public class ARMaskFragment extends AExampleFragment {
                 mLight.setPower(1);
                 getCurrentScene().addLight(mLight);
 
-                String mImagePath = "/storage/emulated/0/dlib/20130821040137899.jpg";
-                String objDir ="BuildMask" + File.separator;
-                String objName = FileUtils.getMD5(mImagePath) + "_obj";
-                LoaderOBJ parser = new LoaderOBJ(this, objDir + objName);
-                parser.parse();
-                mMonkey = parser.getParsedObject();
-                ATexture texture = mMonkey.getMaterial().getTextureList().get(0);
-                mMonkey.getMaterial().removeTexture(texture);
-                mMonkey.setScale(0.11f);
-                mMonkey.setY(-0.5f);
-
-                File sdcard = Environment.getExternalStorageDirectory();
-                String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-                String textureName = FileUtils.getMD5(mImagePath) + ".jpg";
-                Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(textureDir + textureName, 1024, 1024);
-                mMonkey.getMaterial().addTexture(new Texture("canvas", bitmap));
-                mMonkey.getMaterial().enableLighting(false);
-
-                getCurrentScene().addChild(mMonkey);
-
                 mContainer = new Object3D();
-                mContainer.addChild(mMonkey);
+                showMaskModel();
                 getCurrentScene().addChild(mContainer);
 
             } catch (Exception e) {
@@ -786,8 +782,12 @@ public class ARMaskFragment extends AExampleFragment {
         @Override
         protected void onRender(long ellapsedRealtime, double deltaTime) {
             super.onRender(ellapsedRealtime, deltaTime);
-            //mMonkey.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
             mContainer.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
+
+            if (isBuildMask) {
+                showMaskModel();
+                isBuildMask = false;
+            }
         }
 
         void setAccelerometerValues(float x, float y, float z) {
@@ -797,6 +797,39 @@ public class ARMaskFragment extends AExampleFragment {
         void toggleWireframe() {
             mMonkey.setDrawingMode(mMonkey.getDrawingMode() == GLES20.GL_TRIANGLES ? GLES20.GL_LINES
                     : GLES20.GL_TRIANGLES);
+        }
+
+        void showMaskModel() {
+            try {
+                if (mMonkey != null) {
+                    mMonkey.setY(0);
+                    mContainer.removeChild(mMonkey);
+                }
+
+                //String mImagePath = "/storage/emulated/0/dlib/20130821040137899.jpg";
+                String mImagePath = "/storage/emulated/0/BuildMask/capture_face.jpg";
+                String objDir ="BuildMask" + File.separator;
+                String objName = FileUtils.getMD5(mImagePath) + "_obj";
+                LoaderOBJ parser = new LoaderOBJ(this, objDir + objName);
+                parser.parse();
+                mMonkey = parser.getParsedObject();
+                ATexture texture = mMonkey.getMaterial().getTextureList().get(0);
+                mMonkey.getMaterial().removeTexture(texture);
+                mMonkey.setScale(0.11f);
+                mMonkey.setY(-0.55f);
+
+                File sdcard = Environment.getExternalStorageDirectory();
+                String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+                String textureName = FileUtils.getMD5(mImagePath) + ".jpg";
+                Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(textureDir + textureName, 1024, 1024);
+                mMonkey.getMaterial().addTexture(new Texture("canvas", bitmap));
+                mMonkey.getMaterial().enableLighting(false);
+
+                mContainer.addChild(mMonkey);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }
