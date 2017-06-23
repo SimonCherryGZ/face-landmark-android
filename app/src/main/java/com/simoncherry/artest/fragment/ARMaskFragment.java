@@ -842,7 +842,7 @@ public class ARMaskFragment extends AExampleFragment {
                 mMonkey = parser.getParsedObject();
                 ATexture texture = mMonkey.getMaterial().getTextureList().get(0);
                 mMonkey.getMaterial().removeTexture(texture);
-                mMonkey.setScale(0.05f);
+                mMonkey.setScale(0.06f);
                 mMonkey.setY(-0.55f);
 
                 File sdcard = Environment.getExternalStorageDirectory();
