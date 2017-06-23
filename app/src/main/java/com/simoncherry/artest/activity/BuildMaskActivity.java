@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -297,6 +298,18 @@ public class BuildMaskActivity extends AppCompatActivity {
         Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(imgPath, 1024, 1024);
         int faceWidth = face.getWidth();
         int faceHeight = face.getHeight();
+        float scale;
+        if (faceHeight >= faceWidth) {
+            scale = 1024.0f / faceHeight;
+        } else {
+            scale = 1024.0f / faceWidth;
+        }
+        Matrix matrix = new Matrix();
+        matrix.postScale(scale, scale);// 使用后乘
+        face = Bitmap.createBitmap(face, 0, 0, faceWidth, faceHeight, matrix, false);
+
+        faceWidth = face.getWidth();
+        faceHeight = face.getHeight();
         Bitmap bitmap = Bitmap.createBitmap(1024, 1024, Bitmap.Config.RGB_565);
         Canvas canvas = new Canvas(bitmap);
         canvas.drawBitmap(face, (1024-faceWidth)/2, (1024-faceHeight)/2, null);
