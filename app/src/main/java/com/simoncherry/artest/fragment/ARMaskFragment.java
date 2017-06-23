@@ -694,8 +694,8 @@ public class ARMaskFragment extends AExampleFragment {
             @Override
             public void onTransChange(float x, float y, float z) {
                 ARMaskFragment.AccelerometerRenderer renderer = ((ARMaskFragment.AccelerometerRenderer) mRenderer);
-                renderer.getCurrentCamera().setPosition(-x/200, y/200, z/100);
                 //renderer.mContainer.setPosition(x/20, -y/20, z/20);
+                renderer.getCurrentCamera().setPosition(-x/200, y/200, z/100);
             }
 
             @Override
@@ -843,7 +843,8 @@ public class ARMaskFragment extends AExampleFragment {
                 ATexture texture = mMonkey.getMaterial().getTextureList().get(0);
                 mMonkey.getMaterial().removeTexture(texture);
                 mMonkey.setScale(0.06f);
-                mMonkey.setY(-0.55f);
+                mMonkey.setY(-0.54f);
+                mMonkey.setZ(0.25f);
 
                 File sdcard = Environment.getExternalStorageDirectory();
                 String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;

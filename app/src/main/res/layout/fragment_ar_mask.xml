@@ -41,7 +41,7 @@
         <com.simoncherry.artest.custom.TrasparentTitleView
             android:id="@+id/results"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="50dp"
             android:layout_alignParentTop="true" />
     </RelativeLayout>
 
@@ -62,7 +62,7 @@
         android:layout_height="50dp"
         android:orientation="horizontal"
         android:layout_gravity="top"
-        android:layout_marginTop="60dp">
+        android:layout_marginTop="50dp">
 
         <CheckBox
             android:id="@+id/check_show_crop"
