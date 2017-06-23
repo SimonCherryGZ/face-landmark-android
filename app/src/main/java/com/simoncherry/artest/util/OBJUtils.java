@@ -34,7 +34,7 @@ public class OBJUtils {
 
     private static FaceDet mFaceDet = null;
 
-    private static FaceDet getFaceDet() {
+    public static FaceDet getFaceDet() {
         if (mFaceDet == null) {
             final String targetPath = Constants.getFaceShapeModelPath();
             if (!new File(targetPath).exists()) {
