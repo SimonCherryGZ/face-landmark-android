@@ -1,4 +1,4 @@
-package com.simoncherry.artest.activity;
+package com.simoncherry.artest.ui.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,7 +6,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 
 import com.simoncherry.artest.R;
-import com.simoncherry.artest.fragment.ShowMaskFragment;
+import com.simoncherry.artest.ui.fragment.ShowMaskFragment;
 
 public class ShowMaskActivity extends AppCompatActivity {
 

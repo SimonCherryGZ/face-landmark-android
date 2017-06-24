@@ -14,7 +14,7 @@
  *  imitations under the License.
  */
 
-package com.simoncherry.artest.custom;
+package com.simoncherry.artest.ui.custom;
 
 import android.content.Context;
 import android.graphics.Bitmap;

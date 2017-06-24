@@ -1,4 +1,4 @@
-package com.simoncherry.artest.fragment;
+package com.simoncherry.artest.ui.fragment;
 
 import android.app.Activity;
 import android.content.Context;
@@ -15,7 +15,6 @@ import com.simoncherry.artest.util.FileUtils;
 import org.rajawali3d.Object3D;
 import org.rajawali3d.cameras.ArcballCamera;
 import org.rajawali3d.debug.CoordinateTrident;
-import org.rajawali3d.debug.DebugCamera;
 import org.rajawali3d.debug.DebugLight;
 import org.rajawali3d.debug.DebugVisualizer;
 import org.rajawali3d.debug.GridFloor;

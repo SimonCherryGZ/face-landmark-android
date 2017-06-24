@@ -1,4 +1,4 @@
-package com.simoncherry.artest.activity;
+package com.simoncherry.artest.ui.activity;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;

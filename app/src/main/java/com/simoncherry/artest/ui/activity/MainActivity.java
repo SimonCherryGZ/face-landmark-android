@@ -2,7 +2,7 @@
 *  Copyright (C) 2015 TzuTaLin
 */
 
-package com.simoncherry.artest.activity;
+package com.simoncherry.artest.ui.activity;
 
 import android.Manifest;
 import android.app.Activity;

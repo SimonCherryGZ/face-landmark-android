@@ -1,8 +1,9 @@
-package com.simoncherry.artest.fragment;
+package com.simoncherry.artest.ui.fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -34,6 +35,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -47,12 +50,19 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.simoncherry.artest.MediaLoaderCallback;
 import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
-import com.simoncherry.artest.custom.AutoFitTextureView;
-import com.simoncherry.artest.custom.TrasparentTitleView;
+import com.simoncherry.artest.ui.adapter.ImageAdapter;
+import com.simoncherry.artest.contract.ARFaceContract;
+import com.simoncherry.artest.ui.custom.AutoFitTextureView;
+import com.simoncherry.artest.ui.custom.CustomBottomSheet;
+import com.simoncherry.artest.ui.custom.TrasparentTitleView;
+import com.simoncherry.artest.model.ImageBean;
+import com.simoncherry.artest.presenter.ARFacePresenter;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 import com.simoncherry.artest.util.BitmapUtils;
 import com.simoncherry.artest.util.FileUtils;
@@ -64,11 +74,10 @@ import org.rajawali3d.lights.DirectionalLight;
 import org.rajawali3d.loader.LoaderOBJ;
 import org.rajawali3d.materials.textures.ATexture;
 import org.rajawali3d.materials.textures.Texture;
-import org.rajawali3d.math.Matrix4;
-import org.rajawali3d.math.Quaternion;
 import org.rajawali3d.math.vector.Vector3;
 import org.rajawali3d.renderer.ISurfaceRenderer;
 import org.rajawali3d.view.SurfaceView;
+import org.reactivestreams.Subscription;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -80,6 +89,10 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import hugo.weaving.DebugLog;
+import io.realm.Realm;
+import io.realm.RealmChangeListener;
+import io.realm.RealmList;
+import io.realm.RealmResults;
 
 /**
  * <pre>
@@ -90,27 +103,34 @@ import hugo.weaving.DebugLog;
  *     version: 1.0
  * </pre>
  */
-public class ARMaskFragment extends AExampleFragment {
+public class ARFaceFragment extends AExampleFragment implements ARFaceContract.View{
+    private static final String TAG = "ARMaskFragment";
+    private static final int MINIMUM_PREVIEW_SIZE = 320;
 
     private ImageView ivDraw;
+    private RecyclerView mRecyclerView;
+    private TextView mTvHint;
+    private ImageAdapter mImageAdapter;
+    private CustomBottomSheet mBottomSheetDialog;
+    private ProgressDialog mDialog;
+
+    private List<ImageBean> mImages = new ArrayList<>();
+    private MediaLoaderCallback mediaLoaderCallback = null;
+    private Subscription mSubscription = null;
+    private Realm realm;
+    private RealmResults<ImageBean> realmResults;
 
     private float lastX = 0;
     private float lastY = 0;
     private float lastZ = 0;
     private boolean isDrawLandMark = true;
     private boolean isBuildMask = false;
+    private String mSwapPath = "/storage/emulated/0/dlib/20130821040137899.jpg";
 
-    private Quaternion mQuaternion = new Quaternion();
-
+    private Context mContext;
+    private ARFacePresenter mPresenter;
     private Handler mUIHandler;
     private Paint mFaceLandmarkPaint;
-
-
-    private static final int MINIMUM_PREVIEW_SIZE = 320;
-    private static final String TAG = "ARMaskFragment";
-
-    private TrasparentTitleView mScoreView;
-
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
@@ -119,6 +139,239 @@ public class ARMaskFragment extends AExampleFragment {
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+
+    private String cameraId;
+    private TrasparentTitleView mScoreView;
+    private AutoFitTextureView textureView;
+    private CameraCaptureSession captureSession;
+    private CameraDevice cameraDevice;
+    private Size previewSize;
+
+    private HandlerThread backgroundThread;
+    private Handler backgroundHandler;
+    private HandlerThread inferenceThread;
+    private Handler inferenceHandler;
+    private ImageReader previewReader;
+    private CaptureRequest.Builder previewRequestBuilder;
+    private CaptureRequest previewRequest;
+    private final Semaphore cameraOpenCloseLock = new Semaphore(1);
+
+    public static ARFaceFragment newInstance() {
+        return new ARFaceFragment();
+    }
+
+    @Override
+    public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+        super.onCreateView(inflater, container, savedInstanceState);
+        mContext = getContext();
+        mPresenter = new ARFacePresenter(mContext, this);
+        return mLayout;
+    }
+
+    @Override
+    protected int getLayoutId() {
+        return R.layout.fragment_ar_face;
+    }
+
+    @Override
+    public void onViewCreated(final View view, final Bundle savedInstanceState) {
+        initView(view);
+        initRealm();
+    }
+
+    private void initView(View view) {
+        textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
+        ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
+
+        CheckBox checkShowCrop = (CheckBox) view.findViewById(R.id.check_show_crop);
+        CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
+        CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
+        CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
+        Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
+        Button btnShowSheet = (Button) view.findViewById(R.id.btn_show_sheet);
+        Button btnResetFace = (Button) view.findViewById(R.id.btn_reset_face);
+
+        checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    mOnGetPreviewListener.setWindowVisible(true);
+                } else {
+                    mOnGetPreviewListener.setWindowVisible(false);
+                }
+            }
+        });
+
+        checkShowModel.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ARFaceFragment.AccelerometerRenderer renderer = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
+                renderer.mMonkey.setVisible(isChecked);
+            }
+        });
+
+        checkLandMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                isDrawLandMark = isChecked;
+            }
+        });
+
+        checkDrawMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ((ARFaceFragment.AccelerometerRenderer) mRenderer).toggleWireframe();
+            }
+        });
+
+        btnBuildModel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mOnGetPreviewListener.setIsNeedMask(true);
+            }
+        });
+
+        btnShowSheet.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mBottomSheetDialog.show();
+            }
+        });
+
+        btnResetFace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        File sdcard = Environment.getExternalStorageDirectory();
+                        String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+                        String faceImage = "face_texture.jpg";
+                        String captureImage = "capture_face.jpg";
+                        String faceTexture = FileUtils.getMD5(textureDir + faceImage) + ".jpg";
+                        String captureTexture = FileUtils.getMD5(textureDir + captureImage) + ".jpg";
+                        FileUtils.copyFile(
+                                textureDir + faceTexture,
+                                textureDir + captureTexture);
+                        isBuildMask = true;
+                    }
+                });
+            }
+        });
+
+        mImageAdapter = new ImageAdapter(mContext, mImages);
+        mImageAdapter.setOnItemClickListener(new ImageAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(String path) {
+                Toast.makeText(mContext, path, Toast.LENGTH_SHORT).show();
+                mSwapPath = path;
+                mBottomSheetDialog.dismiss();
+
+                showDialog("提示", "换脸中请稍候...");
+                Thread mThread = new Thread() {
+                    @Override
+                    public void run() {
+                        String[] pathArray = new String[2];
+                        pathArray[0] = mSwapPath;
+                        pathArray[1] = "/storage/emulated/0/BuildMask/face_texture.jpg";
+                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
+                        OBJUtils.swapFace(mContext, pathArray, texture);
+                        isBuildMask = true;
+                        dismissDialog();
+                    }
+                };
+                mThread.start();
+            }
+        });
+
+        View sheetView = LayoutInflater.from(mContext)
+                .inflate(R.layout.layout_bottom_sheet, null);
+        mTvHint = (TextView) sheetView.findViewById(R.id.tv_hint);
+        mRecyclerView = (RecyclerView) sheetView.findViewById(R.id.rv_gallery);
+        mRecyclerView.setAdapter(mImageAdapter);
+        mRecyclerView.setLayoutManager(new GridLayoutManager(mContext, 3));
+        mBottomSheetDialog = new CustomBottomSheet(mContext);
+        mBottomSheetDialog.setContentView(sheetView);
+    }
+
+    private void initRealm() {
+        realm = Realm.getDefaultInstance();
+        realmResults = realm.where(ImageBean.class).equalTo("hasFace", true).findAllAsync();
+        realmResults.addChangeListener(new RealmChangeListener<RealmResults<ImageBean>>() {
+            @Override
+            public void onChange(RealmResults<ImageBean> results) {
+                if (results.size() > 0) {
+                    Log.e(TAG, "results size: " + results.size());
+                    mImages.clear();
+                    mImages.addAll(results.subList(0, results.size()));
+                    if (mImageAdapter != null) {
+                        mImageAdapter.notifyDataSetChanged();
+                        Log.e(TAG, "getItemCount: " + mImageAdapter.getItemCount());
+                    }
+                }
+            }
+        });
+    }
+
+    private void showDialog(final String title, final String content) {
+        mDialog = ProgressDialog.show(mContext, title, content, true);
+    }
+
+    private void dismissDialog() {
+        if (mDialog != null) {
+            mDialog.dismiss();
+        }
+    }
+
+    @Override
+    public void onActivityCreated(final Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mUIHandler = new Handler(Looper.getMainLooper());
+
+        mFaceLandmarkPaint = new Paint();
+        mFaceLandmarkPaint.setColor(Color.YELLOW);
+        mFaceLandmarkPaint.setStrokeWidth(2);
+        mFaceLandmarkPaint.setStyle(Paint.Style.STROKE);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        startBackgroundThread();
+
+        // When the screen is turned off and turned back on, the SurfaceTexture is already
+        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
+        // a camera and start preview from here (otherwise, we wait until the surface is ready in
+        // the SurfaceTextureListener).
+        if (textureView.isAvailable()) {
+            openCamera(textureView.getWidth(), textureView.getHeight());
+        } else {
+            textureView.setSurfaceTextureListener(surfaceTextureListener);
+        }
+
+        if (mediaLoaderCallback == null) {
+            loadLocalImage();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        closeCamera();
+        stopBackgroundThread();
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mSubscription != null) {
+            mSubscription.cancel();
+        }
+        mRecyclerView.setAdapter(null);
+        realmResults.removeAllChangeListeners();
+        realm.close();
     }
 
     private final TextureView.SurfaceTextureListener surfaceTextureListener =
@@ -144,13 +397,6 @@ public class ARMaskFragment extends AExampleFragment {
                 public void onSurfaceTextureUpdated(final SurfaceTexture texture) {
                 }
             };
-
-
-    private String cameraId;
-    private AutoFitTextureView textureView;
-    private CameraCaptureSession captureSession;
-    private CameraDevice cameraDevice;
-    private Size previewSize;
 
     private final CameraDevice.StateCallback stateCallback =
             new CameraDevice.StateCallback() {
@@ -189,15 +435,6 @@ public class ARMaskFragment extends AExampleFragment {
                 }
             };
 
-    private HandlerThread backgroundThread;
-    private Handler backgroundHandler;
-    private HandlerThread inferenceThread;
-    private Handler inferenceHandler;
-    private ImageReader previewReader;
-    private CaptureRequest.Builder previewRequestBuilder;
-    private CaptureRequest previewRequest;
-    private final Semaphore cameraOpenCloseLock = new Semaphore(1);
-
     private void showToast(final String text) {
         final Activity activity = getActivity();
         if (activity != null) {
@@ -228,134 +465,13 @@ public class ARMaskFragment extends AExampleFragment {
 
         // Pick the smallest of those, assuming we found any
         if (bigEnough.size() > 0) {
-            final Size chosenSize = Collections.min(bigEnough, new ARMaskFragment.CompareSizesByArea());
+            final Size chosenSize = Collections.min(bigEnough, new ARFaceFragment.CompareSizesByArea());
             Log.i(TAG, "Chosen size: " + chosenSize.getWidth() + "x" + chosenSize.getHeight());
             return chosenSize;
         } else {
             Log.e(TAG, "Couldn't find any suitable preview size");
             return choices[0];
         }
-    }
-
-    public static ARMaskFragment newInstance() {
-        return new ARMaskFragment();
-    }
-
-    @Override
-    public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
-        super.onCreateView(inflater, container, savedInstanceState);
-        return mLayout;
-    }
-
-    @Override
-    protected int getLayoutId() {
-        return R.layout.fragment_ar_mask;
-    }
-
-    @Override
-    public void onViewCreated(final View view, final Bundle savedInstanceState) {
-        textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
-        ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
-
-        CheckBox checkShowCrop = (CheckBox) view.findViewById(R.id.check_show_crop);
-        CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
-        CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
-        CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
-        Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
-        Button btnSwapFace = (Button) view.findViewById(R.id.btn_swap_face);
-
-        checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mOnGetPreviewListener.setWindowVisible(true);
-                } else {
-                    mOnGetPreviewListener.setWindowVisible(false);
-                }
-            }
-        });
-
-        checkShowModel.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                ARMaskFragment.AccelerometerRenderer renderer = ((ARMaskFragment.AccelerometerRenderer) mRenderer);
-                renderer.mMonkey.setVisible(isChecked);
-            }
-        });
-
-        checkLandMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                isDrawLandMark = isChecked;
-            }
-        });
-
-        checkDrawMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                ((ARMaskFragment.AccelerometerRenderer) mRenderer).toggleWireframe();
-            }
-        });
-
-        btnBuildModel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mOnGetPreviewListener.setIsNeedMask(true);
-            }
-        });
-
-        btnSwapFace.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        String[] pathArray = new String[2];
-                        pathArray[0] = "/storage/emulated/0/dlib/20130821040137899.jpg";
-                        pathArray[1] = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                        OBJUtils.swapFace(getContext(), pathArray, texture);
-                        isBuildMask = true;
-                    }
-                });
-            }
-        });
-    }
-
-    @Override
-    public void onActivityCreated(final Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        mUIHandler = new Handler(Looper.getMainLooper());
-
-        mFaceLandmarkPaint = new Paint();
-        mFaceLandmarkPaint.setColor(Color.YELLOW);
-        mFaceLandmarkPaint.setStrokeWidth(2);
-        mFaceLandmarkPaint.setStyle(Paint.Style.STROKE);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        startBackgroundThread();
-
-        // When the screen is turned off and turned back on, the SurfaceTexture is already
-        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-        // a camera and start preview from here (otherwise, we wait until the surface is ready in
-        // the SurfaceTextureListener).
-        if (textureView.isAvailable()) {
-            openCamera(textureView.getWidth(), textureView.getHeight());
-        } else {
-            textureView.setSurfaceTextureListener(surfaceTextureListener);
-        }
-    }
-
-    @Override
-    public void onPause() {
-        closeCamera();
-        stopBackgroundThread();
-        super.onPause();
     }
 
     @DebugLog
@@ -409,7 +525,7 @@ public class ARMaskFragment extends AExampleFragment {
                 final Size largest =
                         Collections.max(
                                 Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888)),
-                                new ARMaskFragment.CompareSizesByArea());
+                                new ARFaceFragment.CompareSizesByArea());
 
                 // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
@@ -425,7 +541,7 @@ public class ARMaskFragment extends AExampleFragment {
                     textureView.setAspectRatio(previewSize.getHeight(), previewSize.getWidth());
                 }
 
-                ARMaskFragment.this.cameraId = cameraId;
+                ARFaceFragment.this.cameraId = cameraId;
                 return;
             }
         } catch (final CameraAccessException e) {
@@ -603,7 +719,16 @@ public class ARMaskFragment extends AExampleFragment {
         }
 
         Log.i(TAG, "Getting assets.");
-        mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
+        showDialog("提示", "正在初始化...");
+        Thread mThread = new Thread() {
+            @Override
+            public void run() {
+                mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
+                dismissDialog();
+            }
+        };
+        mThread.start();
+
         mOnGetPreviewListener.setLandMarkListener(new OnGetImageListener.LandMarkListener() {
             @Override
             public void onLandmarkChange(final List<VisionDetRet> results) {
@@ -677,7 +802,7 @@ public class ARMaskFragment extends AExampleFragment {
                         rotateZ = lastZ;
                     }
 
-                    ((ARMaskFragment.AccelerometerRenderer) mRenderer).setAccelerometerValues(rotateZ, rotateY, -rotateX);
+                    ((ARFaceFragment.AccelerometerRenderer) mRenderer).setAccelerometerValues(rotateZ, rotateY, -rotateX);
 
                     if (!isJumpX) {
                         lastX = x;
@@ -693,24 +818,13 @@ public class ARMaskFragment extends AExampleFragment {
 
             @Override
             public void onTransChange(float x, float y, float z) {
-                ARMaskFragment.AccelerometerRenderer renderer = ((ARMaskFragment.AccelerometerRenderer) mRenderer);
+                ARFaceFragment.AccelerometerRenderer renderer = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
                 //renderer.mContainer.setPosition(x/20, -y/20, z/20);
                 renderer.getCurrentCamera().setPosition(-x/200, y/200, z/100);
             }
 
             @Override
             public void onMatrixChange(ArrayList<Double> elementList) {
-                if (elementList != null && elementList.size() >= 16) {
-                    Double[] mArray = elementList.toArray(new Double[16]);
-                    double[] mHeadViewMatrix = new double[16];
-                    for (int i=0; i<16; i++) {
-                        mHeadViewMatrix[i] = mArray[i];
-                    }
-                    Log.e("mHeadViewMatrix: ", Arrays.toString(mHeadViewMatrix));
-                    Matrix4 mHeadViewMatrix4 = new Matrix4(mHeadViewMatrix);
-                    mQuaternion.fromMatrix(mHeadViewMatrix4);
-                    ((ARMaskFragment.AccelerometerRenderer) mRenderer).mMonkey.rotate(mQuaternion);
-                }
             }
         });
 
@@ -721,7 +835,7 @@ public class ARMaskFragment extends AExampleFragment {
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
-                        OBJUtils.buildModel(getContext(), bitmap, landmarks);
+                        OBJUtils.buildModel(mContext, bitmap, landmarks);
                         isBuildMask = true;
                     }
                 });
@@ -756,6 +870,12 @@ public class ARMaskFragment extends AExampleFragment {
         textureView.setTransform(matrix);
     }
 
+    @Override
+    public void onSubscribe(Subscription subscription) {
+        mSubscription = subscription;
+        mSubscription.request(Long.MAX_VALUE);
+    }
+
     static class CompareSizesByArea implements Comparator<Size> {
         @Override
         public int compare(final Size lhs, final Size rhs) {
@@ -767,7 +887,7 @@ public class ARMaskFragment extends AExampleFragment {
 
     @Override
     public ISurfaceRenderer createRenderer() {
-        return new ARMaskFragment.AccelerometerRenderer(getActivity(), this);
+        return new ARFaceFragment.AccelerometerRenderer(getActivity(), this);
     }
 
     @Override
@@ -829,11 +949,12 @@ public class ARMaskFragment extends AExampleFragment {
         void showMaskModel() {
             try {
                 if (mMonkey != null) {
+                    mMonkey.setScale(1.0f);
                     mMonkey.setY(0);
+                    mMonkey.setZ(0);
                     mContainer.removeChild(mMonkey);
                 }
 
-                //String mImagePath = "/storage/emulated/0/dlib/20130821040137899.jpg";
                 String mImagePath = "/storage/emulated/0/BuildMask/capture_face.jpg";
                 String objDir ="BuildMask" + File.separator;
                 String objName = FileUtils.getMD5(mImagePath) + "_obj";
@@ -859,5 +980,17 @@ public class ARMaskFragment extends AExampleFragment {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void loadLocalImage() {
+        mediaLoaderCallback = new MediaLoaderCallback(mContext);
+        mediaLoaderCallback.setOnLoadFinishedListener(new MediaLoaderCallback.OnLoadFinishedListener() {
+            @Override
+            public void onLoadFinished(RealmList<ImageBean> data) {
+                //Toast.makeText(mContext, "Total Size: " + data.size(), Toast.LENGTH_SHORT).show();
+                mPresenter.startFaceScanTask(data);
+            }
+        });
+        getActivity().getSupportLoaderManager().initLoader(0, null, mediaLoaderCallback);
     }
 }

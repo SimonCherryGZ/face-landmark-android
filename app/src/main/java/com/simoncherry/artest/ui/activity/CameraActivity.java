@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.simoncherry.artest.activity;
+package com.simoncherry.artest.ui.activity;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -26,7 +26,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.simoncherry.artest.R;
-import com.simoncherry.artest.fragment.ARFaceFragment;
+import com.simoncherry.artest.ui.fragment.ARFaceFragment;
 
 /**
  * Created by darrenl on 2016/5/20.
