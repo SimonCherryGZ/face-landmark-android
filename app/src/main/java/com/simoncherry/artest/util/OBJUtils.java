@@ -49,11 +49,13 @@ public class OBJUtils {
         File sdcard = Environment.getExternalStorageDirectory();
         String faceDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
         String faceName = "capture_face.jpg";
+        String faceName2 = "face_texture.jpg";
 
         Matrix mtx = new Matrix();
         mtx.postRotate(-90.0f);
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mtx, true);
         FileUtils.saveBitmapToFile(context, bitmap, faceDir, faceName);
+        FileUtils.saveBitmapToFile(context, bitmap, faceDir, faceName2);
 
         String facePath = faceDir + faceName;
         String landmarkName = FileUtils.getMD5(facePath) + "_original";
@@ -92,6 +94,11 @@ public class OBJUtils {
         String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
         String textureName = FileUtils.getMD5(imgPath);
         FileUtils.saveBitmapToFile(context, bitmap, textureDir, textureName + ".jpg");
+
+        String faceTexture = "face_texture.jpg";
+        String faceTexturePath = textureDir + faceTexture;
+        String faceTextureName= FileUtils.getMD5(faceTexturePath);
+        FileUtils.saveBitmapToFile(context, bitmap, textureDir, faceTextureName + ".jpg");
         bitmap.recycle();
         bitmap = null;
 

@@ -243,11 +243,15 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
-                        String[] pathArray = new String[2];
-                        pathArray[0] = mSwapPath;
-                        pathArray[1] = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                        OBJUtils.swapFace(mContext, pathArray, texture);
+                        File sdcard = Environment.getExternalStorageDirectory();
+                        String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+                        String faceImage = "face_texture.jpg";
+                        String captureImage = "capture_face.jpg";
+                        String faceTexture = FileUtils.getMD5(textureDir + faceImage) + ".jpg";
+                        String captureTexture = FileUtils.getMD5(textureDir + captureImage) + ".jpg";
+                        FileUtils.copyFile(
+                                textureDir + faceTexture,
+                                textureDir + captureTexture);
                         isBuildMask = true;
                     }
                 });
@@ -261,6 +265,18 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 Toast.makeText(mContext, path, Toast.LENGTH_SHORT).show();
                 mSwapPath = path;
                 mBottomSheetDialog.dismiss();
+
+                new Handler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        String[] pathArray = new String[2];
+                        pathArray[0] = mSwapPath;
+                        pathArray[1] = "/storage/emulated/0/BuildMask/face_texture.jpg";
+                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
+                        OBJUtils.swapFace(mContext, pathArray, texture);
+                        isBuildMask = true;
+                    }
+                });
             }
         });
 
@@ -914,7 +930,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     mContainer.removeChild(mMonkey);
                 }
 
-                //String mImagePath = "/storage/emulated/0/dlib/20130821040137899.jpg";
                 String mImagePath = "/storage/emulated/0/BuildMask/capture_face.jpg";
                 String objDir ="BuildMask" + File.separator;
                 String objName = FileUtils.getMD5(mImagePath) + "_obj";
