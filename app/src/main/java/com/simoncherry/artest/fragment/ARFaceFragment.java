@@ -3,6 +3,7 @@ package com.simoncherry.artest.fragment;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -111,6 +112,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private TextView mTvHint;
     private ImageAdapter mImageAdapter;
     private CustomBottomSheet mBottomSheetDialog;
+    private ProgressDialog mDialog;
+
     private List<ImageBean> mImages = new ArrayList<>();
     private MediaLoaderCallback mediaLoaderCallback = null;
     private Subscription mSubscription = null;
@@ -188,7 +191,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
         Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
         Button btnShowSheet = (Button) view.findViewById(R.id.btn_show_sheet);
-        Button btnSwapFace = (Button) view.findViewById(R.id.btn_swap_face);
+        Button btnResetFace = (Button) view.findViewById(R.id.btn_reset_face);
 
         checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -237,7 +240,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             }
         });
 
-        btnSwapFace.setOnClickListener(new View.OnClickListener() {
+        btnResetFace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Handler().post(new Runnable() {
@@ -266,7 +269,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 mSwapPath = path;
                 mBottomSheetDialog.dismiss();
 
-                new Handler().post(new Runnable() {
+                showDialog("提示", "换脸中请稍候...");
+                Thread mThread = new Thread() {
                     @Override
                     public void run() {
                         String[] pathArray = new String[2];
@@ -275,8 +279,10 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                         String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
                         OBJUtils.swapFace(mContext, pathArray, texture);
                         isBuildMask = true;
+                        dismissDialog();
                     }
-                });
+                };
+                mThread.start();
             }
         });
 
@@ -307,6 +313,16 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 }
             }
         });
+    }
+
+    private void showDialog(final String title, final String content) {
+        mDialog = ProgressDialog.show(mContext, title, content, true);
+    }
+
+    private void dismissDialog() {
+        if (mDialog != null) {
+            mDialog.dismiss();
+        }
     }
 
     @Override

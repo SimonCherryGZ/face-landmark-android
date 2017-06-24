@@ -112,7 +112,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="创建人脸模型"/>
+            android:text="重建人脸模型"/>
 
         <Button
             android:id="@+id/btn_show_sheet"
@@ -122,10 +122,10 @@
             android:text="人脸目录"/>
 
         <Button
-            android:id="@+id/btn_swap_face"
+            android:id="@+id/btn_reset_face"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="换脸"/>
+            android:text="还原"/>
     </LinearLayout>
 </FrameLayout>
