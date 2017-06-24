@@ -7,6 +7,7 @@ import android.util.Log;
 import com.simoncherry.artest.contract.ARFaceContract;
 import com.simoncherry.artest.model.ImageBean;
 import com.simoncherry.artest.util.BitmapUtils;
+import com.simoncherry.artest.util.FileUtils;
 import com.simoncherry.artest.util.OBJUtils;
 import com.simoncherry.artest.util.ViewUtils;
 import com.simoncherry.dlib.VisionDetRet;
@@ -37,6 +38,26 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
     public ARFacePresenter(Context mContext, ARFaceContract.View mView) {
         this.mContext = mContext;
         this.mView = mView;
+    }
+
+    @Override
+    public void resetFaceTexture() {
+        String modelDir = OBJUtils.getModelDir();
+        String texturePath = FileUtils.getMD5(modelDir + OBJUtils.IMG_TEXTURE) + ".jpg";
+        String facePath = FileUtils.getMD5(modelDir + OBJUtils.IMG_FACE) + ".jpg";
+        FileUtils.copyFile(
+                modelDir + texturePath,
+                modelDir + facePath);
+    }
+
+    @Override
+    public void swapFace(String swapPath) {
+        String modelDir = OBJUtils.getModelDir();
+        String[] pathArray = new String[2];
+        pathArray[0] = swapPath;
+        pathArray[1] = modelDir + OBJUtils.IMG_TEXTURE;
+        String texture = modelDir + OBJUtils.IMG_FACE;
+        OBJUtils.swapFace(mContext, pathArray, texture);
     }
 
     @Override
@@ -125,8 +146,6 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-//                ImageBean skipBean = new ImageBean(
-//                        imageBean.getId(), imageBean.getPath(), imageBean.getName(), imageBean.getDate());
                 ImageBean skipBean = new ImageBean();
                 skipBean.setId(imageBean.getId());
                 skipBean.setPath(imageBean.getPath());

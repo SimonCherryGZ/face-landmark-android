@@ -32,6 +32,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.GridLayoutManager;
@@ -245,12 +246,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
-                        String modelDir = OBJUtils.getModelDir();
-                        String texturePath = FileUtils.getMD5(modelDir + OBJUtils.IMG_TEXTURE) + ".jpg";
-                        String facePath = FileUtils.getMD5(modelDir + OBJUtils.IMG_FACE) + ".jpg";
-                        FileUtils.copyFile(
-                                modelDir + texturePath,
-                                modelDir + facePath);
+                        mPresenter.resetFaceTexture();
                         isBuildMask = true;
                     }
                 });
@@ -269,12 +265,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 Thread mThread = new Thread() {
                     @Override
                     public void run() {
-                        String modelDir = OBJUtils.getModelDir();
-                        String[] pathArray = new String[2];
-                        pathArray[0] = mSwapPath;
-                        pathArray[1] = modelDir + OBJUtils.IMG_TEXTURE;
-                        String texture = modelDir + OBJUtils.IMG_FACE;
-                        OBJUtils.swapFace(mContext, pathArray, texture);
+                        mPresenter.swapFace(mSwapPath);
                         isBuildMask = true;
                         dismissDialog();
                     }
@@ -638,15 +629,15 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             new CameraCaptureSession.CaptureCallback() {
                 @Override
                 public void onCaptureProgressed(
-                        final CameraCaptureSession session,
-                        final CaptureRequest request,
-                        final CaptureResult partialResult) {}
+                        @NonNull final CameraCaptureSession session,
+                        @NonNull final CaptureRequest request,
+                        @NonNull final CaptureResult partialResult) {}
 
                 @Override
                 public void onCaptureCompleted(
-                        final CameraCaptureSession session,
-                        final CaptureRequest request,
-                        final TotalCaptureResult result) {}
+                        @NonNull final CameraCaptureSession session,
+                        @NonNull final CaptureRequest request,
+                        @NonNull final TotalCaptureResult result) {}
             };
 
     @SuppressLint("LongLogTag")
@@ -682,7 +673,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     new CameraCaptureSession.StateCallback() {
 
                         @Override
-                        public void onConfigured(final CameraCaptureSession cameraCaptureSession) {
+                        public void onConfigured(@NonNull final CameraCaptureSession cameraCaptureSession) {
                             // The camera is already closed
                             if (null == cameraDevice) {
                                 return;
@@ -709,7 +700,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                         }
 
                         @Override
-                        public void onConfigureFailed(final CameraCaptureSession cameraCaptureSession) {
+                        public void onConfigureFailed(@NonNull final CameraCaptureSession cameraCaptureSession) {
                             showToast("Failed");
                         }
                     },
@@ -745,32 +736,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     @Override
                     public void run() {
                         if (results != null && results.size() > 0) {
-                            VisionDetRet ret = results.get(0);
-                            float resizeRatio = 1.0f;
-                            //float resizeRatio = 1.4286f;    // 预览尺寸 480x320  /  截取尺寸 336x224  (另外悬浮窗尺寸是 810x540)
-                            Rect bounds = new Rect();
-                            bounds.left = (int) (ret.getLeft() * resizeRatio);
-                            bounds.top = (int) (ret.getTop() * resizeRatio);
-                            bounds.right = (int) (ret.getRight() * resizeRatio);
-                            bounds.bottom = (int) (ret.getBottom() * resizeRatio);
-
-                            final Bitmap mBitmap = Bitmap.createBitmap(previewSize.getHeight(), previewSize.getWidth(), Bitmap.Config.ARGB_8888);
-                            Canvas canvas = new Canvas(mBitmap);
-                            canvas.drawRect(bounds, mFaceLandmarkPaint);
-
-                            ArrayList<Point> landmarks = ret.getFaceLandmarks();
-                            for (Point point : landmarks) {
-                                int pointX = (int) (point.x * resizeRatio);
-                                int pointY = (int) (point.y * resizeRatio);
-                                canvas.drawCircle(pointX, pointY, 2, mFaceLandmarkPaint);
-                            }
-
-                            mUIHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ivDraw.setImageBitmap(mBitmap);
-                                }
-                            });
+                            drawLandMark(results.get(0));
                         }
                     }
                 });
@@ -778,42 +744,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
 
             @Override
             public void onRotateChange(float x, float y, float z) {
-                if (mRenderer != null) {
-                    boolean isJumpX = false;
-                    boolean isJumpY = false;
-                    boolean isJumpZ = false;
-                    float rotateX = x;
-                    float rotateY = y;
-                    float rotateZ = z;
-
-                    if (Math.abs(lastX-x) > 90) {
-                        Log.e("rotateException", "X 跳变");
-                        isJumpX = true;
-                        rotateX = lastX;
-                    }
-                    if (Math.abs(lastY-y) > 90) {
-                        Log.e("rotateException", "Y 跳变");
-                        isJumpY = true;
-                        rotateY = lastY;
-                    }
-                    if (Math.abs(lastZ-z) > 90) {
-                        Log.e("rotateException", "Z 跳变");
-                        isJumpZ = true;
-                        rotateZ = lastZ;
-                    }
-
-                    ((ARFaceFragment.AccelerometerRenderer) mRenderer).setAccelerometerValues(rotateZ, rotateY, -rotateX);
-
-                    if (!isJumpX) {
-                        lastX = x;
-                    }
-                    if (!isJumpY) {
-                        lastY = y;
-                    }
-                    if (!isJumpZ) {
-                        lastZ = z;
-                    }
-                }
+                rotateModel(x, y, z);
             }
 
             @Override
@@ -841,6 +772,73 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 });
             }
         });
+    }
+
+    private void drawLandMark(VisionDetRet ret) {
+        float resizeRatio = 1.0f;
+        //float resizeRatio = 1.4286f;    // 预览尺寸 480x320  /  截取尺寸 336x224  (另外悬浮窗尺寸是 810x540)
+        Rect bounds = new Rect();
+        bounds.left = (int) (ret.getLeft() * resizeRatio);
+        bounds.top = (int) (ret.getTop() * resizeRatio);
+        bounds.right = (int) (ret.getRight() * resizeRatio);
+        bounds.bottom = (int) (ret.getBottom() * resizeRatio);
+
+        final Bitmap mBitmap = Bitmap.createBitmap(previewSize.getHeight(), previewSize.getWidth(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(mBitmap);
+        canvas.drawRect(bounds, mFaceLandmarkPaint);
+
+        ArrayList<Point> landmarks = ret.getFaceLandmarks();
+        for (Point point : landmarks) {
+            int pointX = (int) (point.x * resizeRatio);
+            int pointY = (int) (point.y * resizeRatio);
+            canvas.drawCircle(pointX, pointY, 2, mFaceLandmarkPaint);
+        }
+
+        mUIHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                ivDraw.setImageBitmap(mBitmap);
+            }
+        });
+    }
+
+    private void rotateModel(float x, float y, float z) {
+        if (mRenderer != null) {
+            boolean isJumpX = false;
+            boolean isJumpY = false;
+            boolean isJumpZ = false;
+            float rotateX = x;
+            float rotateY = y;
+            float rotateZ = z;
+
+            if (Math.abs(lastX-x) > 90) {
+                Log.e("rotateException", "X 跳变");
+                isJumpX = true;
+                rotateX = lastX;
+            }
+            if (Math.abs(lastY-y) > 90) {
+                Log.e("rotateException", "Y 跳变");
+                isJumpY = true;
+                rotateY = lastY;
+            }
+            if (Math.abs(lastZ-z) > 90) {
+                Log.e("rotateException", "Z 跳变");
+                isJumpZ = true;
+                rotateZ = lastZ;
+            }
+
+            ((ARFaceFragment.AccelerometerRenderer) mRenderer).setAccelerometerValues(rotateZ, rotateY, -rotateX);
+
+            if (!isJumpX) {
+                lastX = x;
+            }
+            if (!isJumpY) {
+                lastY = y;
+            }
+            if (!isJumpZ) {
+                lastZ = z;
+            }
+        }
     }
 
     @DebugLog
@@ -876,7 +874,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mSubscription.request(Long.MAX_VALUE);
     }
 
-    static class CompareSizesByArea implements Comparator<Size> {
+    private static class CompareSizesByArea implements Comparator<Size> {
         @Override
         public int compare(final Size lhs, final Size rhs) {
             // We cast here to ensure the multiplications won't overflow

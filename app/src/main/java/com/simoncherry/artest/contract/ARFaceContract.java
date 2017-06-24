@@ -16,6 +16,8 @@ public interface ARFaceContract {
     }
 
     interface Presenter {
+        void resetFaceTexture();
+        void swapFace(String swapPath);
         void startFaceScanTask(final RealmList<ImageBean> data);
     }
 }

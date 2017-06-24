@@ -70,7 +70,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:textColor="@android:color/white"
-            android:text="显示小图"
+            android:text="缩略图"
             android:checked="true"/>
 
         <CheckBox
