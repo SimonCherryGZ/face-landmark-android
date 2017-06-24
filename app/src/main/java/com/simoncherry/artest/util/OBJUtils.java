@@ -77,7 +77,7 @@ public class OBJUtils {
         createObjFile(context, facePath);
     }
 
-    private static void createVerticesAndCoordinates(Context context, String imgPath) {
+    public static void createVerticesAndCoordinates(Context context, String imgPath) {
         // 模型贴图大小是1024x1024。以“壁纸适应放置”方式将人脸图片置于其中
         Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(imgPath, 1024, 1024);
         int faceWidth = face.getWidth();
@@ -138,7 +138,7 @@ public class OBJUtils {
         }
     }
 
-    private static void writeLandmarkToDisk(ArrayList<Point> landmarks, String path, String name) {
+    public static void writeLandmarkToDisk(ArrayList<Point> landmarks, String path, String name) {
         String jsonString = JSON.toJSONString(landmarks);
         Log.e(TAG, "landmarks: " + jsonString);
 
@@ -248,7 +248,7 @@ public class OBJUtils {
         }
     }
 
-    private static void createObjFile(Context context, String imgPath) {
+    public static void createObjFile(Context context, String imgPath) {
         // 缺少base_mask.mtl和base_texture.jpg的话，加载模型时有警告
         String modelDir = getModelDir();
         String baseMtlPath = modelDir + "base_mask.mtl";
@@ -366,7 +366,7 @@ public class OBJUtils {
         }
     }
 
-    private static void createTexture(Context context, String srcPath, String dstPath) {
+    public static void createTexture(Context context, String srcPath, String dstPath) {
         Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(srcPath, 1024, 1024);
         int faceWidth = face.getWidth();
         int faceHeight = face.getHeight();
