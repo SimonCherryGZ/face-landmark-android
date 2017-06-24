@@ -29,7 +29,6 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.opengl.GLES20;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -56,14 +55,14 @@ import android.widget.Toast;
 import com.simoncherry.artest.MediaLoaderCallback;
 import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
-import com.simoncherry.artest.ui.adapter.ImageAdapter;
 import com.simoncherry.artest.contract.ARFaceContract;
-import com.simoncherry.artest.ui.custom.AutoFitTextureView;
-import com.simoncherry.artest.ui.custom.CustomBottomSheet;
-import com.simoncherry.artest.ui.custom.TrasparentTitleView;
 import com.simoncherry.artest.model.ImageBean;
 import com.simoncherry.artest.presenter.ARFacePresenter;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
+import com.simoncherry.artest.ui.adapter.ImageAdapter;
+import com.simoncherry.artest.ui.custom.AutoFitTextureView;
+import com.simoncherry.artest.ui.custom.CustomBottomSheet;
+import com.simoncherry.artest.ui.custom.TrasparentTitleView;
 import com.simoncherry.artest.util.BitmapUtils;
 import com.simoncherry.artest.util.FileUtils;
 import com.simoncherry.artest.util.OBJUtils;
@@ -246,15 +245,12 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
-                        File sdcard = Environment.getExternalStorageDirectory();
-                        String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-                        String faceImage = "face_texture.jpg";
-                        String captureImage = "capture_face.jpg";
-                        String faceTexture = FileUtils.getMD5(textureDir + faceImage) + ".jpg";
-                        String captureTexture = FileUtils.getMD5(textureDir + captureImage) + ".jpg";
+                        String modelDir = OBJUtils.getModelDir();
+                        String texturePath = FileUtils.getMD5(modelDir + OBJUtils.IMG_TEXTURE) + ".jpg";
+                        String facePath = FileUtils.getMD5(modelDir + OBJUtils.IMG_FACE) + ".jpg";
                         FileUtils.copyFile(
-                                textureDir + faceTexture,
-                                textureDir + captureTexture);
+                                modelDir + texturePath,
+                                modelDir + facePath);
                         isBuildMask = true;
                     }
                 });
@@ -273,10 +269,11 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 Thread mThread = new Thread() {
                     @Override
                     public void run() {
+                        String modelDir = OBJUtils.getModelDir();
                         String[] pathArray = new String[2];
                         pathArray[0] = mSwapPath;
-                        pathArray[1] = "/storage/emulated/0/BuildMask/face_texture.jpg";
-                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
+                        pathArray[1] = modelDir + OBJUtils.IMG_TEXTURE;
+                        String texture = modelDir + OBJUtils.IMG_FACE;
                         OBJUtils.swapFace(mContext, pathArray, texture);
                         isBuildMask = true;
                         dismissDialog();
@@ -304,12 +301,15 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             public void onChange(RealmResults<ImageBean> results) {
                 if (results.size() > 0) {
                     Log.e(TAG, "results size: " + results.size());
+                    mTvHint.setVisibility(View.GONE);
                     mImages.clear();
                     mImages.addAll(results.subList(0, results.size()));
                     if (mImageAdapter != null) {
                         mImageAdapter.notifyDataSetChanged();
                         Log.e(TAG, "getItemCount: " + mImageAdapter.getItemCount());
                     }
+                } else {
+                    mTvHint.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -718,12 +718,12 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             Log.e(TAG, "Exception!", e);
         }
 
-        Log.i(TAG, "Getting assets.");
         showDialog("提示", "正在初始化...");
         Thread mThread = new Thread() {
             @Override
             public void run() {
-                mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
+                mOnGetPreviewListener.initialize(
+                        getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
                 dismissDialog();
             }
         };
@@ -835,7 +835,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
-                        OBJUtils.buildModel(mContext, bitmap, landmarks);
+                        OBJUtils.buildFaceModel(mContext, bitmap, landmarks);
                         isBuildMask = true;
                     }
                 });
@@ -955,10 +955,10 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     mContainer.removeChild(mMonkey);
                 }
 
-                String mImagePath = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                String objDir ="BuildMask" + File.separator;
-                String objName = FileUtils.getMD5(mImagePath) + "_obj";
-                LoaderOBJ parser = new LoaderOBJ(this, objDir + objName);
+                String modelDir = OBJUtils.getModelDir();
+                String imagePath = modelDir + OBJUtils.IMG_FACE;
+                String objPath = OBJUtils.DIR_NAME + File.separator + FileUtils.getMD5(imagePath) + "_obj";
+                LoaderOBJ parser = new LoaderOBJ(this, objPath);
                 parser.parse();
                 mMonkey = parser.getParsedObject();
                 ATexture texture = mMonkey.getMaterial().getTextureList().get(0);
@@ -967,10 +967,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 mMonkey.setY(-0.54f);
                 mMonkey.setZ(0.25f);
 
-                File sdcard = Environment.getExternalStorageDirectory();
-                String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-                String textureName = FileUtils.getMD5(mImagePath) + ".jpg";
-                Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(textureDir + textureName, 1024, 1024);
+                String texturePath = FileUtils.getMD5(imagePath) + ".jpg";
+                Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(modelDir + texturePath, 1024, 1024);
                 mMonkey.getMaterial().addTexture(new Texture("canvas", bitmap));
                 mMonkey.getMaterial().enableLighting(false);
 

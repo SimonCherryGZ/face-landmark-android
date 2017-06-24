@@ -721,7 +721,7 @@ public class ARMaskFragment extends AExampleFragment {
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
-                        OBJUtils.buildModel(getContext(), bitmap, landmarks);
+                        OBJUtils.buildFaceModel(getContext(), bitmap, landmarks);
                         isBuildMask = true;
                     }
                 });

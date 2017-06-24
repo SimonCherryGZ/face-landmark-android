@@ -31,6 +31,12 @@ import java.util.List;
 
 public class OBJUtils {
     private final static String TAG = OBJUtils.class.getSimpleName();
+    public final static String DIR_NAME = "BuildMask";
+    public final static String IMG_FACE = "capture_face.jpg";
+    public final static String IMG_TEXTURE = "face_texture.jpg";
+    public final static String TXT_LANDMARK = "_original";
+    public final static String TXT_VERTEX = "_vertices.txt";
+    public final static String TXT_UV = "_coordinates.txt";
 
     private static FaceDet mFaceDet = null;
 
@@ -45,28 +51,34 @@ public class OBJUtils {
         return mFaceDet;
     }
 
-    public static void buildModel(Context context, Bitmap bitmap, ArrayList<Point> landmarks) {
+    public static String getModelDir() {
         File sdcard = Environment.getExternalStorageDirectory();
-        String faceDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String faceName = "capture_face.jpg";
-        String faceName2 = "face_texture.jpg";
+        return sdcard.getAbsolutePath() + File.separator + DIR_NAME + File.separator;
+    }
 
+    public static void buildFaceModel(Context context, Bitmap bitmap, ArrayList<Point> landmarks) {
+        String modelDir = getModelDir();
+        // 从前置摄像头获取的Bitmap是顺时针90°横置的，需要逆时针90°旋转“扶正”
         Matrix mtx = new Matrix();
         mtx.postRotate(-90.0f);
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mtx, true);
-        FileUtils.saveBitmapToFile(context, bitmap, faceDir, faceName);
-        FileUtils.saveBitmapToFile(context, bitmap, faceDir, faceName2);
+        // IMG_FACE是原始图片，所有计算基于IMG_FACE
+        FileUtils.saveBitmapToFile(context, bitmap, modelDir, IMG_FACE);
+        // IMG_TEXTURE是模型的贴图
+        FileUtils.saveBitmapToFile(context, bitmap, modelDir, IMG_TEXTURE);
 
-        String facePath = faceDir + faceName;
-        String landmarkName = FileUtils.getMD5(facePath) + "_original";
-        saveLandmarkTxt(landmarks, faceDir, landmarkName);
-
+        String facePath = modelDir + IMG_FACE;
+        String landmarkName = FileUtils.getMD5(facePath) + TXT_LANDMARK;
+        // 保存关键点txt
+        writeLandmarkToDisk(landmarks, modelDir, landmarkName);
+        // 根据关键点生成模型顶点、UV贴图坐标
         createVerticesAndCoordinates(context, facePath);
-
+        // 根据上面的模型顶点、UV贴图坐标生成OBJ文件
         createObjFile(context, facePath);
     }
 
     private static void createVerticesAndCoordinates(Context context, String imgPath) {
+        // 模型贴图大小是1024x1024。以“壁纸适应放置”方式将人脸图片置于其中
         Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(imgPath, 1024, 1024);
         int faceWidth = face.getWidth();
         int faceHeight = face.getHeight();
@@ -77,7 +89,7 @@ public class OBJUtils {
             scale = 1024.0f / faceWidth;
         }
         Matrix matrix = new Matrix();
-        matrix.postScale(scale, scale);// 使用后乘
+        matrix.postScale(scale, scale);
         face = Bitmap.createBitmap(face, 0, 0, faceWidth, faceHeight, matrix, false);
 
         faceWidth = face.getWidth();
@@ -90,83 +102,43 @@ public class OBJUtils {
         face.recycle();
         face = null;
 
-        File sdcard = Environment.getExternalStorageDirectory();
-        String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String textureName = FileUtils.getMD5(imgPath);
-        FileUtils.saveBitmapToFile(context, bitmap, textureDir, textureName + ".jpg");
-
-        String faceTexture = "face_texture.jpg";
-        String faceTexturePath = textureDir + faceTexture;
-        String faceTextureName= FileUtils.getMD5(faceTexturePath);
-        FileUtils.saveBitmapToFile(context, bitmap, textureDir, faceTextureName + ".jpg");
+        // 保存“适应”处理后的人脸图片
+        String modelDir = getModelDir();
+        String imageName = FileUtils.getMD5(imgPath);
+        FileUtils.saveBitmapToFile(context, bitmap, modelDir, imageName + ".jpg");
+        // 复制一份作为贴图图片
+        String texturePath = modelDir + IMG_TEXTURE;
+        String textureName= FileUtils.getMD5(texturePath);
+        FileUtils.saveBitmapToFile(context, bitmap, modelDir, textureName + ".jpg");
         bitmap.recycle();
         bitmap = null;
 
-        final String texturePath = textureDir + textureName + ".jpg";
-        final List<VisionDetRet> faceList = getFaceDet().detect(texturePath);
+        final String imagePath = modelDir + imageName + ".jpg";
+        // 检测“适应”处理后的人脸图片上的关键点
+        final List<VisionDetRet> faceList = getFaceDet().detect(imagePath);
         if (faceList != null && faceList.size() > 0) {
             ArrayList<Point> landmarks = faceList.get(0).getFaceLandmarks();
-            saveLandmarkTxt(landmarks, textureDir, textureName);
-            saveVertices(context, landmarks, textureDir, textureName);
-            saveUVMapCoordinate(landmarks, textureDir, textureName);
+            // 保存关键点txt
+            writeLandmarkToDisk(landmarks, modelDir, imageName);
+            // 保存模型顶点txt
+            saveVertices(context, landmarks, modelDir, imageName);
+            // 保存UV贴图坐标txt
+            saveUVMapCoordinate(landmarks, modelDir, imageName);
         }
 
         Log.e(TAG, "createVerticesAndCoordinates done!");
     }
 
-    private static void createTexture(Context context, String srcPath, String dstPath) {
-        Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(srcPath, 1024, 1024);
-        int faceWidth = face.getWidth();
-        int faceHeight = face.getHeight();
-        float scale;
-        if (faceHeight >= faceWidth) {
-            scale = 1024.0f / faceHeight;
-        } else {
-            scale = 1024.0f / faceWidth;
-        }
-        Matrix matrix = new Matrix();
-        matrix.postScale(scale, scale);// 使用后乘
-        face = Bitmap.createBitmap(face, 0, 0, faceWidth, faceHeight, matrix, false);
-
-        faceWidth = face.getWidth();
-        faceHeight = face.getHeight();
-        Bitmap bitmap = Bitmap.createBitmap(1024, 1024, Bitmap.Config.RGB_565);
-        Canvas canvas = new Canvas(bitmap);
-        canvas.drawBitmap(face, (1024-faceWidth)/2, (1024-faceHeight)/2, null);
-        canvas.save(Canvas.ALL_SAVE_FLAG);
-        canvas.restore();
-        face.recycle();
-        face = null;
-
-        File sdcard = Environment.getExternalStorageDirectory();
-        String textureDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String textureName = FileUtils.getMD5(dstPath);
-        FileUtils.saveBitmapToFile(context, bitmap, textureDir, textureName + ".jpg");
-        bitmap.recycle();
-        bitmap = null;
-    }
-
-    private static void detectAndSaveLandmark(String imgPath) {
-        List<VisionDetRet> faceList = getFaceDet().detect(imgPath);
-        if (faceList != null && faceList.size() > 0) {
-            File sdcard = Environment.getExternalStorageDirectory();
-            String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-            String landmarkName = FileUtils.getMD5(imgPath) + "_original";
-            saveLandmarkTxt(faceList.get(0).getFaceLandmarks(), landmarkDir, landmarkName);
-        }
-    }
-
     public static void saveLandmarkTxt(ArrayList<Point> landmarks, String imgPath) {
-        File sdcard = Environment.getExternalStorageDirectory();
-        String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String landmarkName = FileUtils.getMD5(imgPath) + "_original";
-        File file = new File(landmarkDir + landmarkName + ".txt");
+        String modelDir = getModelDir();
+        String landmarkName = FileUtils.getMD5(imgPath) + TXT_LANDMARK;
+        File file = new File(modelDir + landmarkName + ".txt");
         if (!file.exists()) {
-            saveLandmarkTxt(landmarks, landmarkDir, landmarkName);
+            writeLandmarkToDisk(landmarks, modelDir, landmarkName);
         }
     }
 
-    private static void saveLandmarkTxt(ArrayList<Point> landmarks, String path, String name) {
+    private static void writeLandmarkToDisk(ArrayList<Point> landmarks, String path, String name) {
         String jsonString = JSON.toJSONString(landmarks);
         Log.e(TAG, "landmarks: " + jsonString);
 
@@ -195,15 +167,17 @@ public class OBJUtils {
         for (int i=0; i<40; i++) {
             vertices.add(new Point(0, 0));
         }
-
+        // 根据人脸关键点生成模型X、Y轴顶点
         for (int i=0; i<vertices.size(); i++) {
             vertices.set(i, getVertexByIndex(landmarks, i));
         }
 
+        // 暂时没有动态生成模型Z轴的坐标，只是根据某些点的距离按比例缩放
         Point chin_point = landmarks.get(8);
-        Point what_point = vertices.get(0);
-        float z_scale = (what_point.x - chin_point.x) / 30f / -2.15f;
+        Point first_point = vertices.get(0);
+        float z_scale = (first_point.x - chin_point.x) / 30f / -2.15f;
 
+        // 读取raw目录中预置的Z轴顶点集合，按比例缩放
         ArrayList<Float> zAxisPoints = new ArrayList<>();
         InputStream is = context.getResources().openRawResource(R.raw.z_axis);
         try {
@@ -219,8 +193,9 @@ public class OBJUtils {
         }
         Log.e(TAG, "get z-axis: " + zAxisPoints.toString());
 
+        // 保存X、Y、Z三轴的顶点坐标
         DecimalFormat decimalFormat = new DecimalFormat(".000000");
-        String fileName = path + name + "_vertices.txt";
+        String fileName = path + name + TXT_VERTEX;
         try {
             int i = 0;
             FileWriter writer = new FileWriter(fileName);
@@ -229,7 +204,7 @@ public class OBJUtils {
                 float pointX = (point.x - chin_point.x) / 30f;
                 float pointY = (point.y - chin_point.y) / -30f;
                 String landmark = "v " + decimalFormat.format(pointX) + " " + decimalFormat.format(pointY) + " " + decimalFormat.format(pointZ) + "\n";
-                Log.e(TAG, "write landmark[" + String.valueOf(i) + "]: " + landmark);
+                Log.e(TAG, "write vertex[" + String.valueOf(i) + "]: " + landmark);
                 i++;
                 writer.write(landmark);
             }
@@ -241,6 +216,209 @@ public class OBJUtils {
         }
     }
 
+    private static void saveUVMapCoordinate(ArrayList<Point> landmarks, String path, String name) {
+        ArrayList<Point> coordinates = new ArrayList<>();
+        for (int i=0; i<40; i++) {
+            coordinates.add(new Point(0, 0));
+        }
+
+        // 根据人脸关键点生成UV贴图坐标
+        for (int i=0; i<coordinates.size(); i++) {
+            coordinates.set(i, getCoordinateByIndex(landmarks, i));
+        }
+
+        DecimalFormat decimalFormat = new DecimalFormat(".0000");
+        String fileName = path + name + TXT_UV;
+        try {
+            int i = 0;
+            FileWriter writer = new FileWriter(fileName);
+            for (Point point : coordinates) {
+                float x = point.x / 1024.0f;
+                float y = 1 - point.y / 1024.0f;
+                String string = "vt " + decimalFormat.format(x) + " " + decimalFormat.format(y) + "\n";
+                Log.e(TAG, "write coordinates[" + String.valueOf(i) + "]: " + string);
+                i++;
+                writer.write(string);
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e(TAG, e.toString());
+        }
+    }
+
+    private static void createObjFile(Context context, String imgPath) {
+        // 缺少base_mask.mtl和base_texture.jpg的话，加载模型时有警告
+        String modelDir = getModelDir();
+        String baseMtlPath = modelDir + "base_mask.mtl";
+        File mtlFile = new File(baseMtlPath);
+        if (!mtlFile.exists()) {
+            FileUtils.copyFileFromRawToOthers(context, R.raw.base_mask, baseMtlPath);
+        }
+
+        String baseTexturePath = modelDir + "base_texture.jpg";
+        File textureFile = new File(baseTexturePath);
+        if (!textureFile.exists()) {
+            FileUtils.copyFileFromRawToOthers(context, R.raw.base_texture, baseTexturePath);
+        }
+
+        // 读取预设模型base_mask_obj
+        StringBuilder stringBuilder = new StringBuilder();
+        InputStream is = context.getResources().openRawResource(R.raw.base_mask_obj);
+        try {
+            InputStreamReader reader = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(reader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                stringBuilder.append(str).append("\n");
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        String obj_str = stringBuilder.toString();
+        Log.e(TAG, "read base_mask_obj: " + obj_str);
+
+        // 替换新的顶点和UV坐标
+        String[] ss = obj_str.split("\n");
+        List<String> vertices = readVerticesFromTxt(imgPath);
+        List<String> coordinates = readCoordinatesFromTxt(imgPath);
+        // base_mask_obj第4至第43行定义顶点
+        for (int i=4; i<44; i++) {
+            ss[i] = vertices.get(i-4);
+        }
+        // base_mask_obj第44至第83行定义UV坐标
+        for (int i=44; i<84; i++) {
+            ss[i] = coordinates.get(i-44);
+        }
+
+        // 保存生成的obj文件
+        String objName = FileUtils.getMD5(imgPath);
+        String objPath = modelDir + objName + "_obj";
+
+        try {
+            int i = 0;
+            FileWriter writer = new FileWriter(objPath);
+            for (String s : ss) {
+                Log.e(TAG, "write obj[" + String.valueOf(i) + "]: " + s);
+                i++;
+                writer.write(s + "\n");
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e(TAG, e.toString());
+        }
+
+        Log.e(TAG, "doCreateObjFile done!");
+    }
+
+    private static List<String> readVerticesFromTxt(String imgPath) {
+        String modelDir = getModelDir();
+        String vertexName = FileUtils.getMD5(imgPath) + TXT_VERTEX;
+        String vertexPath = modelDir + vertexName;
+
+        final List<String> vertices = new ArrayList<>();
+        try {
+            FileReader fileReader = new FileReader(vertexPath);
+            BufferedReader br = new BufferedReader(fileReader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                vertices.add(str);
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return vertices;
+    }
+
+    private static List<String> readCoordinatesFromTxt(String imgPath) {
+        String modelDir = getModelDir();
+        String uvName = FileUtils.getMD5(imgPath) + TXT_UV;
+        String uvPath = modelDir + uvName;
+
+        final List<String> coordinate = new ArrayList<>();
+        try {
+            FileReader fileReader = new FileReader(uvPath);
+            BufferedReader br = new BufferedReader(fileReader);
+            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
+                coordinate.add(str);
+            }
+            br.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return coordinate;
+    }
+
+    private static void detectAndSaveLandmark(String imgPath) {
+        List<VisionDetRet> faceList = getFaceDet().detect(imgPath);
+        if (faceList != null && faceList.size() > 0) {
+            String modelDir = getModelDir();
+            String landmarkPath = FileUtils.getMD5(imgPath) + TXT_LANDMARK;
+            writeLandmarkToDisk(faceList.get(0).getFaceLandmarks(), modelDir, landmarkPath);
+        }
+    }
+
+    private static void createTexture(Context context, String srcPath, String dstPath) {
+        Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(srcPath, 1024, 1024);
+        int faceWidth = face.getWidth();
+        int faceHeight = face.getHeight();
+        float scale;
+        if (faceHeight >= faceWidth) {
+            scale = 1024.0f / faceHeight;
+        } else {
+            scale = 1024.0f / faceWidth;
+        }
+        Matrix matrix = new Matrix();
+        matrix.postScale(scale, scale);
+        face = Bitmap.createBitmap(face, 0, 0, faceWidth, faceHeight, matrix, false);
+
+        faceWidth = face.getWidth();
+        faceHeight = face.getHeight();
+        Bitmap bitmap = Bitmap.createBitmap(1024, 1024, Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawBitmap(face, (1024-faceWidth)/2, (1024-faceHeight)/2, null);
+        canvas.save(Canvas.ALL_SAVE_FLAG);
+        canvas.restore();
+        face.recycle();
+        face = null;
+
+        String modelDir = getModelDir();
+        String textureName = FileUtils.getMD5(dstPath)  + ".jpg";
+        FileUtils.saveBitmapToFile(context, bitmap, modelDir, textureName);
+        bitmap.recycle();
+        bitmap = null;
+    }
+
+    public static void swapFace(Context context, String[] pathArray,  String resultPath) {
+        String modelDir = getModelDir();
+
+        for (int i=0; i<2; i++) {
+            String landmarkName = FileUtils.getMD5(pathArray[i]) + TXT_LANDMARK;
+            File file = new File(modelDir + landmarkName);
+            //if (!file.exists())
+            {
+                detectAndSaveLandmark(pathArray[i]);
+            }
+        }
+
+        String swapResult = JNIUtils.doFaceSwap(pathArray);
+
+        if (swapResult != null) {
+            final File file = new File(swapResult);
+            if (file.exists()) {
+                createTexture(context, swapResult, resultPath);
+            }
+        }
+    }
+
     private static Point getVertexByIndex(ArrayList<Point> landmarks, int index) {
         switch (index) {
             case 0:
@@ -248,9 +426,9 @@ public class OBJUtils {
             case 1:
                 return landmarks.get(39);
             case 2:
-                return getMeanPoint(landmarks, 40, 41);
+                return getMiddlePoint(landmarks, 40, 41);
             case 3:
-                return getMeanPoint(landmarks, 37, 38);
+                return getMiddlePoint(landmarks, 37, 38);
             case 4:
                 return landmarks.get(20);
             case 5:
@@ -262,13 +440,13 @@ public class OBJUtils {
             case 8:
                 return landmarks.get(35);
             case 9:
-                return getMeanPoint(landmarks, 43, 44);
+                return getMiddlePoint(landmarks, 43, 44);
             case 10:
                 return landmarks.get(45);
             case 11:
-                return getMeanPoint(landmarks, 46, 47);
+                return getMiddlePoint(landmarks, 46, 47);
             case 12:
-                return getMeanPoint(landmarks, 31, 35);
+                return getMiddlePoint(landmarks, 31, 35);
             case 13:
                 return landmarks.get(31);
             case 14:
@@ -285,7 +463,7 @@ public class OBJUtils {
             case 31:
                 return landmarks.get(8);
             case 20:
-                return getMeanPoint(landmarks, 20, 23);
+                return getMiddlePoint(landmarks, 20, 23);
             case 21:
                 return landmarks.get(25);
             case 22:
@@ -313,48 +491,11 @@ public class OBJUtils {
             case 33:
                 return landmarks.get(6);
             case 38:
-                return getMeanPoint(landmarks, 36, 39);
+                return getMiddlePoint(landmarks, 36, 39);
             case 39:
-                return getMeanPoint(landmarks, 42, 45);
+                return getMiddlePoint(landmarks, 42, 45);
             default:
                 return landmarks.get(0);
-        }
-    }
-
-    private static Point getMeanPoint(ArrayList<Point> landmarks, int p1, int p2) {
-        Point point1 = landmarks.get(p1);
-        Point point2 = landmarks.get(p2);
-        return new Point((point1.x+point2.x)/2, (point1.y+point2.y)/2);
-    }
-
-    private static void saveUVMapCoordinate(ArrayList<Point> landmarks, String path, String name) {
-        ArrayList<Point> coordinates = new ArrayList<>();
-        for (int i=0; i<40; i++) {
-            coordinates.add(new Point(0, 0));
-        }
-
-        for (int i=0; i<coordinates.size(); i++) {
-            coordinates.set(i, getCoordinateByIndex(landmarks, i));
-        }
-
-        DecimalFormat decimalFormat = new DecimalFormat(".0000");
-        String fileName = path + name + "_coordinates.txt";
-        try {
-            int i = 0;
-            FileWriter writer = new FileWriter(fileName);
-            for (Point point : coordinates) {
-                float x = point.x / 1024.0f;
-                float y = 1 - point.y / 1024.0f;
-                String string = "vt " + decimalFormat.format(x) + " " + decimalFormat.format(y) + "\n";
-                Log.e(TAG, "write coordinates[" + String.valueOf(i) + "]: " + string);
-                i++;
-                writer.write(string);
-            }
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(TAG, e.toString());
         }
     }
 
@@ -385,19 +526,19 @@ public class OBJUtils {
             case 11:
                 return landmarks.get(31);
             case 12:
-                return getMeanPoint(landmarks, 31, 35);
+                return getMiddlePoint(landmarks, 31, 35);
             case 13:
                 return landmarks.get(27);
             case 14:
-                return getMeanPoint(landmarks, 40, 41);
+                return getMiddlePoint(landmarks, 40, 41);
             case 15:
                 return landmarks.get(39);
             case 16:
                 return landmarks.get(20);
             case 17:
-                return getMeanPoint(landmarks, 37, 38);
+                return getMiddlePoint(landmarks, 37, 38);
             case 18:
-                return getMeanPoint(landmarks, 20, 23);
+                return getMiddlePoint(landmarks, 20, 23);
             case 19:
                 return landmarks.get(23);
             case 20:
@@ -405,11 +546,11 @@ public class OBJUtils {
             case 21:
                 return landmarks.get(35);
             case 22:
-                return getMeanPoint(landmarks, 46, 47);
+                return getMiddlePoint(landmarks, 46, 47);
             case 23:
                 return landmarks.get(45);
             case 24:
-                return getMeanPoint(landmarks, 43, 44);
+                return getMiddlePoint(landmarks, 43, 44);
             case 25:
                 return landmarks.get(25);
             case 26:
@@ -437,151 +578,33 @@ public class OBJUtils {
             case 37:
                 return landmarks.get(4);
             case 38:
-                return getMeanPoint(landmarks, 36, 39);
+                return getMiddlePoint(landmarks, 36, 39);
             case 39:
-                return getMeanPoint(landmarks, 42, 45);
+                return getMiddlePoint(landmarks, 42, 45);
             default:
                 return landmarks.get(0);
         }
     }
 
+    // 返回p1和p2连线的中点
+    private static Point getMiddlePoint(ArrayList<Point> landmarks, int p1, int p2) {
+        Point point1 = landmarks.get(p1);
+        Point point2 = landmarks.get(p2);
+        return new Point((point1.x+point2.x)/2, (point1.y+point2.y)/2);
+    }
+
+    // 返回p1的X轴与p2的Y轴相交的点
     private static Point getIntersectPoint(ArrayList<Point> landmarks, int p1, int p2) {
         Point point1 = landmarks.get(p1);
         Point point2 = landmarks.get(p2);
         return new Point(point1.x, point2.y);
     }
 
+    // 返回（p1的X轴， p2与p3的Y轴中点）
     private static Point getDoNotKnowHowToSay(ArrayList<Point> landmarks, int p1, int p2, int p3) {
         Point point1 = landmarks.get(p1);
         Point point2 = landmarks.get(p2);
         Point point3 = landmarks.get(p3);
         return new Point(point1.x, (point2.y + point3.y)/2);
-    }
-
-    private static void createObjFile(Context context, String mCurrentImgPath) {
-        File sdcard = Environment.getExternalStorageDirectory();
-        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator + "base_mask.mtl";
-        FileUtils.copyFileFromRawToOthers(context, R.raw.base_mask, path);
-        path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator + "base_texture.jpg";
-        FileUtils.copyFileFromRawToOthers(context, R.raw.base_texture, path);
-
-        // 读取预设模型base_mask_obj
-        StringBuilder stringBuilder = new StringBuilder();
-        InputStream is = context.getResources().openRawResource(R.raw.base_mask_obj);
-        try {
-            InputStreamReader reader = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(reader);
-            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
-                stringBuilder.append(str).append("\n");
-            }
-            br.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        String obj_str = stringBuilder.toString();
-        Log.e(TAG, "read base_mask_obj: " + obj_str);
-
-        // 替换新的顶点和UV坐标
-        String[] ss = obj_str.split("\n");
-        List<String> vertices = readVerticesFromTxt(mCurrentImgPath);
-        List<String> coordinates = readCoordinatesFromTxt(mCurrentImgPath);
-
-        for (int i=4; i<44; i++) {
-            ss[i] = vertices.get(i-4);
-        }
-
-        for (int i=44; i<84; i++) {
-            ss[i] = coordinates.get(i-44);
-        }
-
-        // 保存
-        path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String name = FileUtils.getMD5(mCurrentImgPath);
-        String fileName = path + name + "_obj";
-
-        try {
-            int i = 0;
-            FileWriter writer = new FileWriter(fileName);
-            for (String s : ss) {
-                Log.e(TAG, "write obj[" + String.valueOf(i) + "]: " + s);
-                i++;
-                writer.write(s + "\n");
-            }
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(TAG, e.toString());
-        }
-
-        Log.e(TAG, "doCreateObjFile done!");
-    }
-
-    private static List<String> readVerticesFromTxt(String mCurrentImgPath) {
-        File sdcard = Environment.getExternalStorageDirectory();
-        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String name = FileUtils.getMD5(mCurrentImgPath) + "_vertices.txt";
-        String fileName = path + name;
-
-        final List<String> vertices = new ArrayList<>();
-        try {
-            FileReader fileReader = new FileReader(fileName);
-            BufferedReader br = new BufferedReader(fileReader);
-            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
-                vertices.add(str);
-            }
-            br.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return vertices;
-    }
-
-    private static List<String> readCoordinatesFromTxt(String mCurrentImgPath) {
-        File sdcard = Environment.getExternalStorageDirectory();
-        String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-        String name = FileUtils.getMD5(mCurrentImgPath) + "_coordinates.txt";
-        String fileName = path + name;
-
-        final List<String> coordinate = new ArrayList<>();
-        try {
-            FileReader fileReader = new FileReader(fileName);
-            BufferedReader br = new BufferedReader(fileReader);
-            for(String str; (str = br.readLine()) != null; ) {  // 这里不能用while(br.readLine()) != null) 因为循环条件已经读了一条
-                coordinate.add(str);
-            }
-            br.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return coordinate;
-    }
-
-    public static void swapFace(Context context, String[] pathArray,  String resultPath) {
-        File sdcard = Environment.getExternalStorageDirectory();
-        String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
-
-        for (int i=0; i<2; i++) {
-            String landmarkName = FileUtils.getMD5(pathArray[i]) + "_original.txt";
-            File file = new File(landmarkDir + landmarkName);
-            //if (!file.exists())
-            {
-                detectAndSaveLandmark(pathArray[i]);
-            }
-        }
-
-        String swapResult = JNIUtils.doFaceSwap(pathArray);
-
-        if (swapResult != null) {
-            final File file = new File(swapResult);
-            if (file.exists()) {
-                createTexture(context, swapResult, resultPath);
-            }
-        }
     }
 }
