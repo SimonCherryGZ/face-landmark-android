@@ -719,7 +719,16 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         }
 
         Log.i(TAG, "Getting assets.");
-        mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
+        showDialog("提示", "正在初始化...");
+        Thread mThread = new Thread() {
+            @Override
+            public void run() {
+                mOnGetPreviewListener.initialize(getActivity().getApplicationContext(), getActivity().getAssets(), mScoreView, inferenceHandler);
+                dismissDialog();
+            }
+        };
+        mThread.start();
+
         mOnGetPreviewListener.setLandMarkListener(new OnGetImageListener.LandMarkListener() {
             @Override
             public void onLandmarkChange(final List<VisionDetRet> results) {
@@ -978,7 +987,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mediaLoaderCallback.setOnLoadFinishedListener(new MediaLoaderCallback.OnLoadFinishedListener() {
             @Override
             public void onLoadFinished(RealmList<ImageBean> data) {
-                Toast.makeText(mContext, "Total Size: " + data.size(), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "Total Size: " + data.size(), Toast.LENGTH_SHORT).show();
                 mPresenter.startFaceScanTask(data);
             }
         });

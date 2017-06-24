@@ -209,9 +209,11 @@ public class OnGetImageListener implements OnImageAvailableListener {
                         }
 
                         long startTime = System.currentTimeMillis();
-                        List<VisionDetRet> results;
+                        List<VisionDetRet> results = null;
                         synchronized (OnGetImageListener.this) {
-                            results = mFaceDet.detect(mCroppedBitmap);
+                            if (mFaceDet != null) {
+                                results = mFaceDet.detect(mCroppedBitmap);
+                            }
                         }
 
                         // Draw on bitmap
@@ -235,7 +237,9 @@ public class OnGetImageListener implements OnImageAvailableListener {
                         long endTime = System.currentTimeMillis();
                         mTransparentTitleView.setText("Time cost: " + String.valueOf((endTime - startTime) / 1000f) + " sec");
 
-                        mWindow.setRGBBitmap(mCroppedBitmap);
+                        if (mWindow != null) {
+                            mWindow.setRGBBitmap(mCroppedBitmap);
+                        }
                         mIsComputing = false;
                     }
                 });
