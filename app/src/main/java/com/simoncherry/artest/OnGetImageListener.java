@@ -302,9 +302,9 @@ public class OnGetImageListener implements OnImageAvailableListener {
                 landMarkListener.onRotateChange(x, y, z);
 
                 if (mIsNeedMask) {
-                    boolean xIsGood = (x >= -12) && (x <= -8);
-                    boolean yIsGood = (y >= -3) && (y <= 3);
-                    boolean zIsGood = (z >= -3) && (z <= 3);
+                    boolean xIsGood = (x >= -8) && (x <= 8);
+                    boolean yIsGood = (y >= -8) && (y <= 8);
+                    boolean zIsGood = (z >= -8) && (z <= 8);
                     if (xIsGood && yIsGood && zIsGood) {
                         Log.e("rotateList: ", "good rotation to build 3d face model");
                         mIsNeedMask = false;

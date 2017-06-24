@@ -128,4 +128,14 @@
             android:layout_weight="1"
             android:text="还原"/>
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="150dp"
+        android:textColor="@android:color/white"
+        android:text="正在检测人脸"
+        android:visibility="gone"/>
 </FrameLayout>

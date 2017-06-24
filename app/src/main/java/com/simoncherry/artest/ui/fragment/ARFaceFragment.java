@@ -107,12 +107,20 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private static final String TAG = "ARMaskFragment";
     private static final int MINIMUM_PREVIEW_SIZE = 320;
 
+    private TrasparentTitleView mScoreView;
+    private AutoFitTextureView textureView;
     private ImageView ivDraw;
     private RecyclerView mRecyclerView;
-    private TextView mTvHint;
+    private TextView mTvCameraHint;
+    private TextView mTvSearchHint;
     private ImageAdapter mImageAdapter;
     private CustomBottomSheet mBottomSheetDialog;
     private ProgressDialog mDialog;
+
+    private Context mContext;
+    private ARFacePresenter mPresenter;
+    private Handler mUIHandler;
+    private Paint mFaceLandmarkPaint;
 
     private List<ImageBean> mImages = new ArrayList<>();
     private MediaLoaderCallback mediaLoaderCallback = null;
@@ -127,11 +135,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private boolean isBuildMask = false;
     private String mSwapPath = "/storage/emulated/0/dlib/20130821040137899.jpg";
 
-    private Context mContext;
-    private ARFacePresenter mPresenter;
-    private Handler mUIHandler;
-    private Paint mFaceLandmarkPaint;
-
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
     static {
@@ -142,8 +145,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     }
 
     private String cameraId;
-    private TrasparentTitleView mScoreView;
-    private AutoFitTextureView textureView;
     private CameraCaptureSession captureSession;
     private CameraDevice cameraDevice;
     private Size previewSize;
@@ -184,6 +185,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
         ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
+        mTvCameraHint = (TextView) view.findViewById(R.id.tv_hint);
 
         CheckBox checkShowCrop = (CheckBox) view.findViewById(R.id.check_show_crop);
         CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
@@ -229,6 +231,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         btnBuildModel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mTvCameraHint.setVisibility(View.VISIBLE);
                 mOnGetPreviewListener.setIsNeedMask(true);
             }
         });
@@ -276,7 +279,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
 
         View sheetView = LayoutInflater.from(mContext)
                 .inflate(R.layout.layout_bottom_sheet, null);
-        mTvHint = (TextView) sheetView.findViewById(R.id.tv_hint);
+        mTvSearchHint = (TextView) sheetView.findViewById(R.id.tv_hint);
         mRecyclerView = (RecyclerView) sheetView.findViewById(R.id.rv_gallery);
         mRecyclerView.setAdapter(mImageAdapter);
         mRecyclerView.setLayoutManager(new GridLayoutManager(mContext, 3));
@@ -292,7 +295,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             public void onChange(RealmResults<ImageBean> results) {
                 if (results.size() > 0) {
                     Log.e(TAG, "results size: " + results.size());
-                    mTvHint.setVisibility(View.GONE);
+                    mTvSearchHint.setVisibility(View.GONE);
                     mImages.clear();
                     mImages.addAll(results.subList(0, results.size()));
                     if (mImageAdapter != null) {
@@ -300,7 +303,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                         Log.e(TAG, "getItemCount: " + mImageAdapter.getItemCount());
                     }
                 } else {
-                    mTvHint.setVisibility(View.VISIBLE);
+                    mTvSearchHint.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -932,6 +935,15 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             if (isBuildMask) {
                 showMaskModel();
                 isBuildMask = false;
+                Activity activity = getActivity();
+                if (activity != null) {
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mTvCameraHint.setVisibility(View.GONE);
+                        }
+                    });
+                }
             }
         }
 
