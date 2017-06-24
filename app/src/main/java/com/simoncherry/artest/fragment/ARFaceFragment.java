@@ -103,8 +103,8 @@ import io.realm.RealmResults;
  * </pre>
  */
 public class ARFaceFragment extends AExampleFragment implements ARFaceContract.View{
-    private static final int MINIMUM_PREVIEW_SIZE = 320;
     private static final String TAG = "ARMaskFragment";
+    private static final int MINIMUM_PREVIEW_SIZE = 320;
 
     private ImageView ivDraw;
     private RecyclerView mRecyclerView;
@@ -122,6 +122,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private float lastZ = 0;
     private boolean isDrawLandMark = true;
     private boolean isBuildMask = false;
+    private String mSwapPath = "/storage/emulated/0/dlib/20130821040137899.jpg";
 
     private Context mContext;
     private ARFacePresenter mPresenter;
@@ -137,74 +138,12 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-    private final TextureView.SurfaceTextureListener surfaceTextureListener =
-            new TextureView.SurfaceTextureListener() {
-                @Override
-                public void onSurfaceTextureAvailable(
-                        final SurfaceTexture texture, final int width, final int height) {
-                    openCamera(width, height);
-                }
-
-                @Override
-                public void onSurfaceTextureSizeChanged(
-                        final SurfaceTexture texture, final int width, final int height) {
-                    configureTransform(width, height);
-                }
-
-                @Override
-                public boolean onSurfaceTextureDestroyed(final SurfaceTexture texture) {
-                    return true;
-                }
-
-                @Override
-                public void onSurfaceTextureUpdated(final SurfaceTexture texture) {
-                }
-            };
-
-
     private String cameraId;
     private TrasparentTitleView mScoreView;
     private AutoFitTextureView textureView;
     private CameraCaptureSession captureSession;
     private CameraDevice cameraDevice;
     private Size previewSize;
-
-    private final CameraDevice.StateCallback stateCallback =
-            new CameraDevice.StateCallback() {
-                @Override
-                public void onOpened(final CameraDevice cd) {
-                    // This method is called when the camera is opened.  We start camera preview here.
-                    cameraOpenCloseLock.release();
-                    cameraDevice = cd;
-                    createCameraPreviewSession();
-                }
-
-                @Override
-                public void onDisconnected(final CameraDevice cd) {
-                    cameraOpenCloseLock.release();
-                    cd.close();
-                    cameraDevice = null;
-
-                    if (mOnGetPreviewListener != null) {
-                        mOnGetPreviewListener.deInitialize();
-                    }
-                }
-
-                @Override
-                public void onError(final CameraDevice cd, final int error) {
-                    cameraOpenCloseLock.release();
-                    cd.close();
-                    cameraDevice = null;
-                    final Activity activity = getActivity();
-                    if (null != activity) {
-                        activity.finish();
-                    }
-
-                    if (mOnGetPreviewListener != null) {
-                        mOnGetPreviewListener.deInitialize();
-                    }
-                }
-            };
 
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
@@ -214,45 +153,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private CaptureRequest.Builder previewRequestBuilder;
     private CaptureRequest previewRequest;
     private final Semaphore cameraOpenCloseLock = new Semaphore(1);
-
-    private void showToast(final String text) {
-        final Activity activity = getActivity();
-        if (activity != null) {
-            activity.runOnUiThread(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-                        }
-                    });
-        }
-    }
-
-    @SuppressLint("LongLogTag")
-    @DebugLog
-    private static Size chooseOptimalSize(
-            final Size[] choices, final int width, final int height, final Size aspectRatio) {
-        // Collect the supported resolutions that are at least as big as the preview Surface
-        final List<Size> bigEnough = new ArrayList<Size>();
-        for (final Size option : choices) {
-            if (option.getHeight() >= MINIMUM_PREVIEW_SIZE && option.getWidth() >= MINIMUM_PREVIEW_SIZE) {
-                Log.i(TAG, "Adding size: " + option.getWidth() + "x" + option.getHeight());
-                bigEnough.add(option);
-            } else {
-                Log.i(TAG, "Not adding size: " + option.getWidth() + "x" + option.getHeight());
-            }
-        }
-
-        // Pick the smallest of those, assuming we found any
-        if (bigEnough.size() > 0) {
-            final Size chosenSize = Collections.min(bigEnough, new ARFaceFragment.CompareSizesByArea());
-            Log.i(TAG, "Chosen size: " + chosenSize.getWidth() + "x" + chosenSize.getHeight());
-            return chosenSize;
-        } else {
-            Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
-        }
-    }
 
     public static ARFaceFragment newInstance() {
         return new ARFaceFragment();
@@ -344,7 +244,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     @Override
                     public void run() {
                         String[] pathArray = new String[2];
-                        pathArray[0] = "/storage/emulated/0/dlib/20130821040137899.jpg";
+                        pathArray[0] = mSwapPath;
                         pathArray[1] = "/storage/emulated/0/BuildMask/capture_face.jpg";
                         String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
                         OBJUtils.swapFace(mContext, pathArray, texture);
@@ -359,8 +259,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             @Override
             public void onItemClick(String path) {
                 Toast.makeText(mContext, path, Toast.LENGTH_SHORT).show();
+                mSwapPath = path;
                 mBottomSheetDialog.dismiss();
-                //mPresenter.drawFaceArea3(path);
             }
         });
 
@@ -440,6 +340,106 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mRecyclerView.setAdapter(null);
         realmResults.removeAllChangeListeners();
         realm.close();
+    }
+
+    private final TextureView.SurfaceTextureListener surfaceTextureListener =
+            new TextureView.SurfaceTextureListener() {
+                @Override
+                public void onSurfaceTextureAvailable(
+                        final SurfaceTexture texture, final int width, final int height) {
+                    openCamera(width, height);
+                }
+
+                @Override
+                public void onSurfaceTextureSizeChanged(
+                        final SurfaceTexture texture, final int width, final int height) {
+                    configureTransform(width, height);
+                }
+
+                @Override
+                public boolean onSurfaceTextureDestroyed(final SurfaceTexture texture) {
+                    return true;
+                }
+
+                @Override
+                public void onSurfaceTextureUpdated(final SurfaceTexture texture) {
+                }
+            };
+
+    private final CameraDevice.StateCallback stateCallback =
+            new CameraDevice.StateCallback() {
+                @Override
+                public void onOpened(final CameraDevice cd) {
+                    // This method is called when the camera is opened.  We start camera preview here.
+                    cameraOpenCloseLock.release();
+                    cameraDevice = cd;
+                    createCameraPreviewSession();
+                }
+
+                @Override
+                public void onDisconnected(final CameraDevice cd) {
+                    cameraOpenCloseLock.release();
+                    cd.close();
+                    cameraDevice = null;
+
+                    if (mOnGetPreviewListener != null) {
+                        mOnGetPreviewListener.deInitialize();
+                    }
+                }
+
+                @Override
+                public void onError(final CameraDevice cd, final int error) {
+                    cameraOpenCloseLock.release();
+                    cd.close();
+                    cameraDevice = null;
+                    final Activity activity = getActivity();
+                    if (null != activity) {
+                        activity.finish();
+                    }
+
+                    if (mOnGetPreviewListener != null) {
+                        mOnGetPreviewListener.deInitialize();
+                    }
+                }
+            };
+
+    private void showToast(final String text) {
+        final Activity activity = getActivity();
+        if (activity != null) {
+            activity.runOnUiThread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
+
+    @SuppressLint("LongLogTag")
+    @DebugLog
+    private static Size chooseOptimalSize(
+            final Size[] choices, final int width, final int height, final Size aspectRatio) {
+        // Collect the supported resolutions that are at least as big as the preview Surface
+        final List<Size> bigEnough = new ArrayList<Size>();
+        for (final Size option : choices) {
+            if (option.getHeight() >= MINIMUM_PREVIEW_SIZE && option.getWidth() >= MINIMUM_PREVIEW_SIZE) {
+                Log.i(TAG, "Adding size: " + option.getWidth() + "x" + option.getHeight());
+                bigEnough.add(option);
+            } else {
+                Log.i(TAG, "Not adding size: " + option.getWidth() + "x" + option.getHeight());
+            }
+        }
+
+        // Pick the smallest of those, assuming we found any
+        if (bigEnough.size() > 0) {
+            final Size chosenSize = Collections.min(bigEnough, new ARFaceFragment.CompareSizesByArea());
+            Log.i(TAG, "Chosen size: " + chosenSize.getWidth() + "x" + chosenSize.getHeight());
+            return chosenSize;
+        } else {
+            Log.e(TAG, "Couldn't find any suitable preview size");
+            return choices[0];
+        }
     }
 
     @DebugLog
@@ -908,7 +908,9 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         void showMaskModel() {
             try {
                 if (mMonkey != null) {
+                    mMonkey.setScale(1.0f);
                     mMonkey.setY(0);
+                    mMonkey.setZ(0);
                     mContainer.removeChild(mMonkey);
                 }
 

@@ -61,7 +61,7 @@ public class OBJUtils {
 
         createVerticesAndCoordinates(context, facePath);
 
-        doCreateObjFile(context, facePath);
+        createObjFile(context, facePath);
     }
 
     private static void createVerticesAndCoordinates(Context context, String imgPath) {
@@ -100,7 +100,7 @@ public class OBJUtils {
         if (faceList != null && faceList.size() > 0) {
             ArrayList<Point> landmarks = faceList.get(0).getFaceLandmarks();
             saveLandmarkTxt(landmarks, textureDir, textureName);
-            saveLandmark2Vertices(context, landmarks, textureDir, textureName);
+            saveVertices(context, landmarks, textureDir, textureName);
             saveUVMapCoordinate(landmarks, textureDir, textureName);
         }
 
@@ -139,13 +139,23 @@ public class OBJUtils {
         bitmap = null;
     }
 
-    private static void createLandmark(String imgPath) {
+    private static void detectAndSaveLandmark(String imgPath) {
         List<VisionDetRet> faceList = getFaceDet().detect(imgPath);
         if (faceList != null && faceList.size() > 0) {
             File sdcard = Environment.getExternalStorageDirectory();
             String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
             String landmarkName = FileUtils.getMD5(imgPath) + "_original";
             saveLandmarkTxt(faceList.get(0).getFaceLandmarks(), landmarkDir, landmarkName);
+        }
+    }
+
+    public static void saveLandmarkTxt(ArrayList<Point> landmarks, String imgPath) {
+        File sdcard = Environment.getExternalStorageDirectory();
+        String landmarkDir = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator;
+        String landmarkName = FileUtils.getMD5(imgPath) + "_original";
+        File file = new File(landmarkDir + landmarkName + ".txt");
+        if (!file.exists()) {
+            saveLandmarkTxt(landmarks, landmarkDir, landmarkName);
         }
     }
 
@@ -173,7 +183,7 @@ public class OBJUtils {
         }
     }
 
-    private static void saveLandmark2Vertices(Context context, ArrayList<Point> landmarks, String path, String name) {
+    private static void saveVertices(Context context, ArrayList<Point> landmarks, String path, String name) {
         ArrayList<Point> vertices = new ArrayList<>();
         for (int i=0; i<40; i++) {
             vertices.add(new Point(0, 0));
@@ -441,7 +451,7 @@ public class OBJUtils {
         return new Point(point1.x, (point2.y + point3.y)/2);
     }
 
-    private static void doCreateObjFile(Context context, String mCurrentImgPath) {
+    private static void createObjFile(Context context, String mCurrentImgPath) {
         File sdcard = Environment.getExternalStorageDirectory();
         String path = sdcard.getAbsolutePath() + File.separator + "BuildMask" + File.separator + "base_mask.mtl";
         FileUtils.copyFileFromRawToOthers(context, R.raw.base_mask, path);
@@ -554,7 +564,7 @@ public class OBJUtils {
             File file = new File(landmarkDir + landmarkName);
             //if (!file.exists())
             {
-                createLandmark(pathArray[i]);
+                detectAndSaveLandmark(pathArray[i]);
             }
         }
 

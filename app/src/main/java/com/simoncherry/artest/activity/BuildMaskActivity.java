@@ -203,7 +203,8 @@ public class BuildMaskActivity extends AppCompatActivity {
         for (int i=0; i<2; i++) {
             String landmarkName = FileUtils.getMD5(pathArray[i]) + "_original.txt";
             File file = new File(landmarkDir + landmarkName);
-            if (!file.exists()) {
+            //0if (!file.exists())
+            {
                 createLandmark(pathArray[i]);
             }
         }
@@ -357,6 +358,18 @@ public class BuildMaskActivity extends AppCompatActivity {
         Bitmap face = BitmapUtils.decodeSampledBitmapFromFilePath(srcPath, 1024, 1024);
         int faceWidth = face.getWidth();
         int faceHeight = face.getHeight();
+        float scale;
+        if (faceHeight >= faceWidth) {
+            scale = 1024.0f / faceHeight;
+        } else {
+            scale = 1024.0f / faceWidth;
+        }
+        Matrix matrix = new Matrix();
+        matrix.postScale(scale, scale);// 使用后乘
+        face = Bitmap.createBitmap(face, 0, 0, faceWidth, faceHeight, matrix, false);
+
+        faceWidth = face.getWidth();
+        faceHeight = face.getHeight();
         Bitmap bitmap = Bitmap.createBitmap(1024, 1024, Bitmap.Config.RGB_565);
         Canvas canvas = new Canvas(bitmap);
         canvas.drawBitmap(face, (1024-faceWidth)/2, (1024-faceHeight)/2, null);

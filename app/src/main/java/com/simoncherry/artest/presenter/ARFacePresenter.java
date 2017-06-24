@@ -82,6 +82,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
                             final List<VisionDetRet> faceList = OBJUtils.getFaceDet().detect(bitmap);
                             if (faceList != null && faceList.size() > 0) {
                                 Log.e(TAG, path + " - has face");
+                                OBJUtils.saveLandmarkTxt(faceList.get(0).getFaceLandmarks(), imageBean.getPath());
                                 return true;
                             } else {
                                 saveImageToRealm(imageBean, false);
