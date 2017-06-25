@@ -17,11 +17,11 @@ import java.util.List;
  * Created by Simon on 2017/6/23.
  */
 
-public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyViewHolder> {
+public class faceAdapter extends RecyclerView.Adapter<faceAdapter.MyViewHolder> {
     private Context mContext;
     private List<ImageBean> mData;
 
-    public ImageAdapter(Context mContext, List<ImageBean> mData) {
+    public faceAdapter(Context mContext, List<ImageBean> mData) {
         this.mContext = mContext;
         this.mData = mData;
     }
@@ -29,7 +29,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyViewHolder
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         return new MyViewHolder(LayoutInflater.from(mContext)
-                .inflate(R.layout.item_img, parent, false));
+                .inflate(R.layout.item_face, parent, false));
     }
 
     @Override

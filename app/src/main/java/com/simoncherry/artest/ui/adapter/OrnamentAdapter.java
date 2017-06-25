@@ -29,7 +29,7 @@ public class OrnamentAdapter extends RecyclerView.Adapter<OrnamentAdapter.MyView
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         return new MyViewHolder(LayoutInflater.from(mContext)
-                .inflate(R.layout.item_img, parent, false));
+                .inflate(R.layout.item_ornament, parent, false));
     }
 
     @Override
