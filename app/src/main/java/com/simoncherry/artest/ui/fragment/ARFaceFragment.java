@@ -58,9 +58,11 @@ import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.contract.ARFaceContract;
 import com.simoncherry.artest.model.ImageBean;
+import com.simoncherry.artest.model.Ornament;
 import com.simoncherry.artest.presenter.ARFacePresenter;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 import com.simoncherry.artest.ui.adapter.ImageAdapter;
+import com.simoncherry.artest.ui.adapter.OrnamentAdapter;
 import com.simoncherry.artest.ui.custom.AutoFitTextureView;
 import com.simoncherry.artest.ui.custom.CustomBottomSheet;
 import com.simoncherry.artest.ui.custom.TrasparentTitleView;
@@ -110,11 +112,14 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private TrasparentTitleView mScoreView;
     private AutoFitTextureView textureView;
     private ImageView ivDraw;
-    private RecyclerView mRecyclerView;
+    private RecyclerView mRvFace;
+    private RecyclerView mRvOrnament;
     private TextView mTvCameraHint;
     private TextView mTvSearchHint;
     private ImageAdapter mImageAdapter;
-    private CustomBottomSheet mBottomSheetDialog;
+    private CustomBottomSheet mFaceSheet;
+    private OrnamentAdapter mOrnamentAdapter;
+    private CustomBottomSheet mOrnamentSheet;
     private ProgressDialog mDialog;
 
     private Context mContext;
@@ -123,6 +128,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private Paint mFaceLandmarkPaint;
 
     private List<ImageBean> mImages = new ArrayList<>();
+    private List<Ornament> mOrnaments = new ArrayList<>();
     private MediaLoaderCallback mediaLoaderCallback = null;
     private Subscription mSubscription = null;
     private Realm realm;
@@ -134,6 +140,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private boolean isDrawLandMark = true;
     private boolean isBuildMask = false;
     private String mSwapPath = "/storage/emulated/0/dlib/20130821040137899.jpg";
+    private int mOrnamentId = -1;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
@@ -178,6 +185,9 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     @Override
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
         initView(view);
+        initFaceSheet();
+        initOrnamentSheet();
+        initOrnamentData();
         initRealm();
     }
 
@@ -187,15 +197,17 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
         mTvCameraHint = (TextView) view.findViewById(R.id.tv_hint);
 
-        CheckBox checkShowCrop = (CheckBox) view.findViewById(R.id.check_show_crop);
+        CheckBox checkShowWindow = (CheckBox) view.findViewById(R.id.check_show_window);
         CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
         CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
         CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
+        CheckBox checkShowOrnament = (CheckBox) view.findViewById(R.id.check_show_ornament);
         Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
-        Button btnShowSheet = (Button) view.findViewById(R.id.btn_show_sheet);
+        Button btnFaceSheet = (Button) view.findViewById(R.id.btn_face_sheet);
+        Button btnOrnament = (Button) view.findViewById(R.id.btn_ornament_sheet);
         Button btnResetFace = (Button) view.findViewById(R.id.btn_reset_face);
 
-        checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        checkShowWindow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -210,7 +222,9 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 ARFaceFragment.AccelerometerRenderer renderer = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
-                renderer.mMonkey.setVisible(isChecked);
+                if (renderer.mMonkey != null) {
+                    renderer.mMonkey.setVisible(isChecked);
+                }
             }
         });
 
@@ -228,6 +242,16 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             }
         });
 
+        checkShowOrnament.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ARFaceFragment.AccelerometerRenderer renderer = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
+                if (renderer.mOrnament != null) {
+                    renderer.mOrnament.setVisible(isChecked);
+                }
+            }
+        });
+
         btnBuildModel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -236,10 +260,17 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             }
         });
 
-        btnShowSheet.setOnClickListener(new View.OnClickListener() {
+        btnFaceSheet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mBottomSheetDialog.show();
+                mFaceSheet.show();
+            }
+        });
+
+        btnOrnament.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mOrnamentSheet.show();
             }
         });
 
@@ -255,16 +286,18 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 });
             }
         });
+    }
 
+    private void initFaceSheet() {
         mImageAdapter = new ImageAdapter(mContext, mImages);
         mImageAdapter.setOnItemClickListener(new ImageAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(String path) {
                 Toast.makeText(mContext, path, Toast.LENGTH_SHORT).show();
                 mSwapPath = path;
-                mBottomSheetDialog.dismiss();
+                mFaceSheet.dismiss();
 
-                showDialog("提示", "换脸中请稍候...");
+                showDialog("提示", "换脸中...");
                 Thread mThread = new Thread() {
                     @Override
                     public void run() {
@@ -280,11 +313,36 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         View sheetView = LayoutInflater.from(mContext)
                 .inflate(R.layout.layout_bottom_sheet, null);
         mTvSearchHint = (TextView) sheetView.findViewById(R.id.tv_hint);
-        mRecyclerView = (RecyclerView) sheetView.findViewById(R.id.rv_gallery);
-        mRecyclerView.setAdapter(mImageAdapter);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(mContext, 3));
-        mBottomSheetDialog = new CustomBottomSheet(mContext);
-        mBottomSheetDialog.setContentView(sheetView);
+        mRvFace = (RecyclerView) sheetView.findViewById(R.id.rv_gallery);
+        mRvFace.setAdapter(mImageAdapter);
+        mRvFace.setLayoutManager(new GridLayoutManager(mContext, 3));
+        mFaceSheet = new CustomBottomSheet(mContext);
+        mFaceSheet.setContentView(sheetView);
+    }
+
+    private void initOrnamentSheet() {
+        mOrnamentAdapter = new OrnamentAdapter(mContext, mOrnaments);
+        mOrnamentAdapter.setOnItemClickListener(new OrnamentAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                mOrnamentSheet.dismiss();
+                mOrnamentId = position;
+                isBuildMask = true;
+            }
+        });
+
+        View sheetView = LayoutInflater.from(mContext)
+                .inflate(R.layout.layout_bottom_sheet, null);
+        mRvOrnament = (RecyclerView) sheetView.findViewById(R.id.rv_gallery);
+        mRvOrnament.setAdapter(mOrnamentAdapter);
+        mRvOrnament.setLayoutManager(new GridLayoutManager(mContext, 3));
+        mOrnamentSheet = new CustomBottomSheet(mContext);
+        mOrnamentSheet.setContentView(sheetView);
+    }
+
+    private void initOrnamentData() {
+        mOrnaments.addAll(mPresenter.getPresetOrnament());
+        mOrnamentAdapter.notifyDataSetChanged();
     }
 
     private void initRealm() {
@@ -363,7 +421,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         if (mSubscription != null) {
             mSubscription.cancel();
         }
-        mRecyclerView.setAdapter(null);
+        mRvFace.setAdapter(null);
+        mRvOrnament.setAdapter(null);
         realmResults.removeAllChangeListeners();
         realm.close();
     }
@@ -901,6 +960,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         private DirectionalLight mLight;
         private Object3D mContainer;
         private Object3D mMonkey;
+        private Object3D mOrnament;
         private Vector3 mAccValues;
 
         AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
@@ -960,9 +1020,13 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             try {
                 if (mMonkey != null) {
                     mMonkey.setScale(1.0f);
-                    mMonkey.setY(0);
-                    mMonkey.setZ(0);
+                    mMonkey.setPosition(0, 0, 0);
                     mContainer.removeChild(mMonkey);
+                }
+                if (mOrnament != null) {
+                    mOrnament.setScale(1.0f);
+                    mOrnament.setPosition(0, 0, 0);
+                    mContainer.removeChild(mOrnament);
                 }
 
                 String modelDir = OBJUtils.getModelDir();
@@ -975,7 +1039,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 mMonkey.getMaterial().removeTexture(texture);
                 mMonkey.setScale(0.06f);
                 mMonkey.setY(-0.54f);
-                mMonkey.setZ(0.25f);
+                mMonkey.setZ(0.15f);
 
                 String texturePath = FileUtils.getMD5(imagePath) + ".jpg";
                 Bitmap bitmap = BitmapUtils.decodeSampledBitmapFromFilePath(modelDir + texturePath, 1024, 1024);
@@ -983,6 +1047,18 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 mMonkey.getMaterial().enableLighting(false);
 
                 mContainer.addChild(mMonkey);
+
+                if (mOrnamentId >= 0 && mOrnaments.size() > mOrnamentId) {
+                    Ornament ornament = mOrnaments.get(mOrnamentId);
+                    LoaderOBJ objParser1 = new LoaderOBJ(mContext.getResources(), mTextureManager, ornament.getModelResId());
+                    objParser1.parse();
+                    mOrnament = objParser1.getParsedObject();
+                    mOrnament.setScale(ornament.getScale());
+                    mOrnament.setPosition(ornament.getOffsetX(), ornament.getOffsetY(), ornament.getOffsetZ());
+                    mOrnament.setRotation(ornament.getRotateX(), ornament.getRotateY(), ornament.getRotateZ());
+                    mOrnament.getMaterial().setColor(ornament.getColor());
+                    mContainer.addChild(mOrnament);
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();

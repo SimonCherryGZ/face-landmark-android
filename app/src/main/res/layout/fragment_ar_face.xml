@@ -65,21 +65,12 @@
         android:layout_marginTop="50dp">
 
         <CheckBox
-            android:id="@+id/check_show_crop"
+            android:id="@+id/check_show_window"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:textColor="@android:color/white"
-            android:text="缩略图"
-            android:checked="true"/>
-
-        <CheckBox
-            android:id="@+id/check_show_model"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textColor="@android:color/white"
-            android:text="显示模型"
+            android:text="浮窗"
             android:checked="true"/>
 
         <CheckBox
@@ -87,8 +78,17 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:checked="true"
+            android:text="标点"
+            android:textColor="@android:color/white" />
+
+        <CheckBox
+            android:id="@+id/check_show_model"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
             android:textColor="@android:color/white"
-            android:text="关键点"
+            android:text="脸模"
             android:checked="true"/>
 
         <CheckBox
@@ -97,7 +97,16 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:textColor="@android:color/white"
-            android:text="显示材质"
+            android:text="材质"
+            android:checked="true"/>
+
+        <CheckBox
+            android:id="@+id/check_show_ornament"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:textColor="@android:color/white"
+            android:text="装饰"
             android:checked="true"/>
     </LinearLayout>
 
@@ -112,14 +121,21 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="重建人脸模型"/>
+            android:text="重建脸模"/>
 
         <Button
-            android:id="@+id/btn_show_sheet"
+            android:id="@+id/btn_face_sheet"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="人脸目录"/>
+            android:text="人脸"/>
+
+        <Button
+            android:id="@+id/btn_ornament_sheet"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="装饰"/>
 
         <Button
             android:id="@+id/btn_reset_face"
