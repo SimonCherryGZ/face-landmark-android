@@ -166,13 +166,14 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         List<Ornament> ornaments = new ArrayList<>();
         ornaments.add(getGlass());
         ornaments.add(getMoustache());
+        ornaments.add(getVMask());
         return ornaments;
     }
 
     private Ornament getGlass() {
         Ornament ornament = new Ornament();
         ornament.setModelResId(R.raw.glasses_obj);
-        ornament.setImgResId(R.drawable.glasses);
+        ornament.setImgResId(R.drawable.ice_glasses);
         ornament.setScale(0.005f);
         ornament.setOffset(0, 0, 0.15f);
         ornament.setRotate(-90.0f, 90.0f, 90.0f);
@@ -183,10 +184,21 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
     private Ornament getMoustache() {
         Ornament ornament = new Ornament();
         ornament.setModelResId(R.raw.moustache_obj);
-        ornament.setImgResId(R.drawable.moustache);
+        ornament.setImgResId(R.drawable.ic_moustache);
         ornament.setScale(0.15f);
         ornament.setOffset(0, -0.3f, 0.15f);
         ornament.setRotate(-90.0f, 90.0f, 90.0f);
+        ornament.setColor(Color.BLACK);
+        return ornament;
+    }
+
+    private Ornament getVMask() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.v_mask_obj);
+        ornament.setImgResId(R.drawable.ic_v_mask);
+        ornament.setScale(0.12f);
+        ornament.setOffset(0, -0.1f, 0.0f);
+        ornament.setRotate(0, 0, 0);
         ornament.setColor(Color.BLACK);
         return ornament;
     }
