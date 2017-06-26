@@ -1,5 +1,9 @@
 package com.simoncherry.artest.model;
 
+import org.rajawali3d.animation.Animation3D;
+
+import java.util.List;
+
 /**
  * Created by Simon on 2017/6/25.
  */
@@ -15,6 +19,7 @@ public class Ornament {
     private float rotateY;
     private float rotateZ;
     private int color;
+    private List<Animation3D> animation3Ds;
 
     public int getModelResId() {
         return modelResId;
@@ -94,6 +99,14 @@ public class Ornament {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public List<Animation3D> getAnimation3Ds() {
+        return animation3Ds;
+    }
+
+    public void setAnimation3Ds(List<Animation3D> animation3Ds) {
+        this.animation3Ds = animation3Ds;
     }
 
     public void setOffset(float x, float y, float z) {

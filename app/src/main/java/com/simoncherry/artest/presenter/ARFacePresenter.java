@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.util.Log;
+import android.view.animation.LinearInterpolator;
 
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.contract.ARFaceContract;
@@ -15,6 +16,9 @@ import com.simoncherry.artest.util.OBJUtils;
 import com.simoncherry.artest.util.ViewUtils;
 import com.simoncherry.dlib.VisionDetRet;
 
+import org.rajawali3d.animation.Animation3D;
+import org.rajawali3d.animation.ScaleAnimation3D;
+import org.rajawali3d.math.vector.Vector3;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -225,6 +229,13 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setOffset(0, 0.0f, 0.1f);
         ornament.setRotate(0.0f, 0.0f, 0.0f);
         ornament.setColor(0xffcc0000);
+
+        List<Animation3D> animation3Ds = new ArrayList<>();
+        Animation3D anim = new ScaleAnimation3D(new Vector3(0.3f, 0.3f, 0.3f));
+        anim.setDurationMilliseconds(300);
+        anim.setInterpolator(new LinearInterpolator());
+        animation3Ds.add(anim);
+        ornament.setAnimation3Ds(animation3Ds);
         return ornament;
     }
 

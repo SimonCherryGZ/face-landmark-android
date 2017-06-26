@@ -72,6 +72,9 @@ import com.simoncherry.artest.util.OBJUtils;
 import com.simoncherry.dlib.VisionDetRet;
 
 import org.rajawali3d.Object3D;
+import org.rajawali3d.animation.Animation;
+import org.rajawali3d.animation.Animation3D;
+import org.rajawali3d.animation.AnimationGroup;
 import org.rajawali3d.lights.DirectionalLight;
 import org.rajawali3d.loader.LoaderOBJ;
 import org.rajawali3d.materials.textures.ATexture;
@@ -1058,6 +1061,21 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     mOrnament.getMaterial().setColor(ornament.getColor());
                     mOrnament.setVisible(isOrnamentVisible);
                     mContainer.addChild(mOrnament);
+
+                    getCurrentScene().clearAnimations();
+                    List<Animation3D> animation3Ds = ornament.getAnimation3Ds();
+                    if (animation3Ds != null && animation3Ds.size() > 0) {
+                        final AnimationGroup animGroup = new AnimationGroup();
+                        animGroup.setRepeatMode(Animation.RepeatMode.REVERSE_INFINITE);
+
+                        for (Animation3D animation3D : animation3Ds) {
+                            animation3D.setTransformable3D(mOrnament);
+                            animGroup.addAnimation(animation3D);
+                        }
+
+                        getCurrentScene().registerAnimation(animGroup);
+                        animGroup.play();
+                    }
                 }
 
             } catch (Exception e) {
