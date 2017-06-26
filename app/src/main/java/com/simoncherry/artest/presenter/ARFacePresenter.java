@@ -167,6 +167,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornaments.add(getGlass());
         ornaments.add(getMoustache());
         ornaments.add(getCatEar());
+        ornaments.add(getTigerNose());
         ornaments.add(getHeart());
         ornaments.add(getVMask());
         return ornaments;
@@ -200,6 +201,17 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setImgResId(R.drawable.ic_cat);
         ornament.setScale(11.0f);
         ornament.setOffset(0, 0.6f, -0.2f);
+        ornament.setRotate(0.0f, 0.0f, 0.0f);
+        ornament.setColor(0xffe06666);
+        return ornament;
+    }
+
+    private Ornament getTigerNose() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.tiger_nose_obj);
+        ornament.setImgResId(R.drawable.ic_tiger);
+        ornament.setScale(0.002f);
+        ornament.setOffset(0, -0.3f, 0.1f);
         ornament.setRotate(0.0f, 0.0f, 0.0f);
         ornament.setColor(0xffe06666);
         return ornament;
