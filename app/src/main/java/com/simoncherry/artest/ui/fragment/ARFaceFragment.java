@@ -321,6 +321,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mRvFace.setLayoutManager(new GridLayoutManager(mContext, 3));
         mFaceSheet = new CustomBottomSheet(mContext);
         mFaceSheet.setContentView(sheetView);
+        mFaceSheet.getWindow().findViewById(R.id.design_bottom_sheet)
+                .setBackgroundResource(android.R.color.transparent);
     }
 
     private void initOrnamentSheet() {
@@ -341,6 +343,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mRvOrnament.setLayoutManager(new GridLayoutManager(mContext, 4));
         mOrnamentSheet = new CustomBottomSheet(mContext);
         mOrnamentSheet.setContentView(sheetView);
+        mOrnamentSheet.getWindow().findViewById(R.id.design_bottom_sheet)
+                .setBackgroundResource(android.R.color.transparent);
     }
 
     private void initOrnamentData() {

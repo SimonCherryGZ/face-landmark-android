@@ -62,7 +62,7 @@
         android:layout_height="50dp"
         android:orientation="horizontal"
         android:layout_gravity="top"
-        android:layout_marginTop="50dp">
+        android:layout_marginTop="40dp">
 
         <CheckBox
             android:id="@+id/check_show_window"
@@ -121,6 +121,8 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:textColor="@android:color/white"
             android:text="重建脸模"/>
 
         <Button
@@ -128,6 +130,8 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:textColor="@android:color/white"
             android:text="人脸"/>
 
         <Button
@@ -135,6 +139,8 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:textColor="@android:color/white"
             android:text="装饰"/>
 
         <Button
@@ -142,6 +148,8 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:textColor="@android:color/white"
             android:text="还原"/>
     </LinearLayout>
 
