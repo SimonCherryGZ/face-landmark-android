@@ -622,7 +622,7 @@ public class ARMaskFragment extends AExampleFragment {
                         if (results != null && results.size() > 0) {
                             VisionDetRet ret = results.get(0);
                             float resizeRatio = 1.0f;
-                            //float resizeRatio = 1.4286f;    // 预览尺寸 480x320  /  截取尺寸 336x224  (另外悬浮窗尺寸是 810x540)
+                            //float resizeRatio = 2.5f;    // 预览尺寸 480x320  /  截取尺寸 192x128  (另外悬浮窗尺寸是 810x540)
                             Rect bounds = new Rect();
                             bounds.left = (int) (ret.getLeft() * resizeRatio);
                             bounds.top = (int) (ret.getTop() * resizeRatio);

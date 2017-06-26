@@ -52,8 +52,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
     private static final boolean SAVE_PREVIEW_BITMAP = false;
 
     private static final int NUM_CLASSES = 1001;
-    private static final int INPUT_SIZE = 224;
-    private static final int IMAGE_MEAN = 117;
+    private static final int INPUT_SIZE = 128;
     private static final String TAG = "OnGetImageListener";
 
     private int mScreenRotation = 90;
@@ -148,8 +147,8 @@ public class OnGetImageListener implements OnImageAvailableListener {
 
                 float ratio = (float)mPreviewWdith / mPreviewHeight;
                 mCroppedBitmap = Bitmap.createBitmap(INPUT_SIZE, (int) (INPUT_SIZE * ratio), Config.ARGB_8888);
-                Log.e("mCroppedBitmap", "width: " + mCroppedBitmap.getWidth());    // mCroppedBitmap: width: 224
-                Log.e("mCroppedBitmap", "height: " + mCroppedBitmap.getHeight());  // mCroppedBitmap: height: 336
+                Log.e("mCroppedBitmap", "width: " + mCroppedBitmap.getWidth());    // mCroppedBitmap: width: 128
+                Log.e("mCroppedBitmap", "height: " + mCroppedBitmap.getHeight());  // mCroppedBitmap: height: 192
 
                 mYUVBytes = new byte[planes.length][];
                 for (int i = 0; i < planes.length; ++i) {

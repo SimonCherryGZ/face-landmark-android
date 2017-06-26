@@ -87,7 +87,7 @@ extern "C" {
 #define DLIB_FACE_JNI_METHOD(METHOD_NAME) \
   Java_com_simoncherry_dlib_FaceDet_##METHOD_NAME
 
-float bitmap_scale = 1.4286f;
+float bitmap_scale = 2.5f;
 
 // add by simon at 2017/05/01 -- start
 std::vector<cv::Point3d> get_3d_model_points()
