@@ -166,6 +166,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         List<Ornament> ornaments = new ArrayList<>();
         ornaments.add(getGlass());
         ornaments.add(getMoustache());
+        ornaments.add(getCatEar());
         ornaments.add(getVMask());
         return ornaments;
     }
@@ -173,7 +174,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
     private Ornament getGlass() {
         Ornament ornament = new Ornament();
         ornament.setModelResId(R.raw.glasses_obj);
-        ornament.setImgResId(R.drawable.ice_glasses);
+        ornament.setImgResId(R.drawable.ic_glasses);
         ornament.setScale(0.005f);
         ornament.setOffset(0, 0, 0.15f);
         ornament.setRotate(-90.0f, 90.0f, 90.0f);
@@ -189,6 +190,17 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setOffset(0, -0.3f, 0.15f);
         ornament.setRotate(-90.0f, 90.0f, 90.0f);
         ornament.setColor(Color.BLACK);
+        return ornament;
+    }
+
+    private Ornament getCatEar() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.cat_ear_obj);
+        ornament.setImgResId(R.drawable.ic_cat);
+        ornament.setScale(11.0f);
+        ornament.setOffset(0, 0.6f, -0.2f);
+        ornament.setRotate(0.0f, 0.0f, 0.0f);
+        ornament.setColor(0xFFD4237A);
         return ornament;
     }
 
