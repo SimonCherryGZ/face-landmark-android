@@ -16,7 +16,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:surfaceview="http://schemas.android.com/apk/res-auto">
+    xmlns:surfaceview="http://schemas.android.com/apk/res-auto"
+    xmlns:test="http://schemas.android.com/tools">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -160,6 +161,6 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="150dp"
         android:textColor="@android:color/white"
-        android:text="正在检测人脸"
-        android:visibility="gone"/>
+        test:text="正在检测人脸"
+        android:visibility="visible"/>
 </FrameLayout>

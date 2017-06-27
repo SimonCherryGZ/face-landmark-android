@@ -35,6 +35,7 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -49,10 +50,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.simoncherry.artest.MediaLoaderCallback;
 import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
@@ -77,9 +81,12 @@ import org.rajawali3d.animation.Animation3D;
 import org.rajawali3d.animation.AnimationGroup;
 import org.rajawali3d.lights.DirectionalLight;
 import org.rajawali3d.loader.LoaderOBJ;
+import org.rajawali3d.materials.Material;
 import org.rajawali3d.materials.textures.ATexture;
+import org.rajawali3d.materials.textures.StreamingTexture;
 import org.rajawali3d.materials.textures.Texture;
 import org.rajawali3d.math.vector.Vector3;
+import org.rajawali3d.primitives.Plane;
 import org.rajawali3d.renderer.ISurfaceRenderer;
 import org.rajawali3d.view.SurfaceView;
 import org.reactivestreams.Subscription;
@@ -124,10 +131,12 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private OrnamentAdapter mOrnamentAdapter;
     private CustomBottomSheet mOrnamentSheet;
     private ProgressDialog mDialog;
+    private FragmentToDraw mFragmentToDraw;
 
     private Context mContext;
     private ARFacePresenter mPresenter;
     private Handler mUIHandler;
+    private Handler mTextureHandler;
     private Paint mFaceLandmarkPaint;
 
     private List<ImageBean> mImages = new ArrayList<>();
@@ -142,6 +151,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private float lastZ = 0;
     private boolean isDrawLandMark = true;
     private boolean isBuildMask = false;
+    private boolean isShowGIF = false;
     private String mSwapPath = "/storage/emulated/0/dlib/20130821040137899.jpg";
     private int mOrnamentId = -1;
 
@@ -177,6 +187,19 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         super.onCreateView(inflater, container, savedInstanceState);
         mContext = getContext();
         mPresenter = new ARFacePresenter(mContext, this);
+        mTextureHandler = new Handler(Looper.getMainLooper());
+
+        final FrameLayout fragmentFrame = new FrameLayout(getActivity());
+        final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(512, 512);
+        fragmentFrame.setLayoutParams(params);
+        fragmentFrame.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_bright));
+        fragmentFrame.setId(R.id.view_to_texture_frame);
+        fragmentFrame.setVisibility(View.INVISIBLE);
+        mLayout.addView(fragmentFrame);
+
+        mFragmentToDraw = new FragmentToDraw();
+        getActivity().getSupportFragmentManager().beginTransaction().add(R.id.view_to_texture_frame, mFragmentToDraw, "custom").commit();
+
         return mLayout;
     }
 
@@ -258,6 +281,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         btnBuildModel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                mTvCameraHint.setText("正在检测人脸");
                 mTvCameraHint.setVisibility(View.VISIBLE);
                 mOnGetPreviewListener.setIsNeedMask(true);
             }
@@ -792,23 +816,26 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mOnGetPreviewListener.setLandMarkListener(new OnGetImageListener.LandMarkListener() {
             @Override
             public void onLandmarkChange(final List<VisionDetRet> results) {
-                if (!isDrawLandMark) {
-                    mUIHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            ivDraw.setImageResource(0);
-                        }
-                    });
-                    return;
-                }
-                inferenceHandler.post(new Runnable() {
+                mUIHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        if (results != null && results.size() > 0) {
-                            drawLandMark(results.get(0));
+                        handleMouthOpen(results);
+                        if (!isDrawLandMark) {
+                            ivDraw.setImageResource(0);
                         }
                     }
                 });
+
+                if (isDrawLandMark) {
+                    inferenceHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (results != null && results.size() > 0) {
+                                drawLandMark(results.get(0));
+                            }
+                        }
+                    });
+                }
             }
 
             @Override
@@ -843,6 +870,19 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         });
     }
 
+    private void handleMouthOpen(List<VisionDetRet> results) {
+        if (results != null && results.size() > 0) {
+            ArrayList<Point> landmarks = results.get(0).getFaceLandmarks();
+            int mouthTop = landmarks.get(62).y;
+            int mouthBottom = landmarks.get(66).y;
+            int mouthAmplitude = mouthBottom - mouthTop;
+            String openMouth = "openMouth: " + mouthAmplitude;
+            mTvCameraHint.setText(openMouth);
+
+            isShowGIF = mouthAmplitude >= 30;
+        }
+    }
+
     private void drawLandMark(VisionDetRet ret) {
         float resizeRatio = 1.0f;
         //float resizeRatio = 2.5f;    // 预览尺寸 480x320  /  截取尺寸 192x128  (另外悬浮窗尺寸是 810x540)
@@ -856,7 +896,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         Canvas canvas = new Canvas(mBitmap);
         canvas.drawRect(bounds, mFaceLandmarkPaint);
 
-        ArrayList<Point> landmarks = ret.getFaceLandmarks();
+        final ArrayList<Point> landmarks = ret.getFaceLandmarks();
         for (Point point : landmarks) {
             int pointX = (int) (point.x * resizeRatio);
             int pointY = (int) (point.y * resizeRatio);
@@ -957,12 +997,19 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         super.onBeforeApplyRenderer();
     }
 
-    private final class AccelerometerRenderer extends AExampleRenderer {
+    private final class AccelerometerRenderer extends AExampleRenderer implements StreamingTexture.ISurfaceListener{
         private DirectionalLight mLight;
         private Object3D mContainer;
         private Object3D mMonkey;
         private Object3D mOrnament;
         private Vector3 mAccValues;
+
+        private Object3D mPlane;
+        private int mFrameCount;
+        private Surface mSurface;
+        private StreamingTexture mStreamingTexture;
+        private volatile boolean mShouldUpdateTexture;
+        private final float[] mMatrix = new float[16];
 
         AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
             super(context, fragment);
@@ -988,10 +1035,30 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             getCurrentScene().setBackgroundColor(0);
         }
 
+        final Runnable mUpdateTexture = new Runnable() {
+            public void run() {
+                // -- Draw the view on the canvas
+                final Canvas canvas = mSurface.lockCanvas(null);
+                canvas.drawColor(Color.TRANSPARENT);  // 不加这句的话，画面有残影，全是之前的动画轨迹
+                mStreamingTexture.getSurfaceTexture().getTransformMatrix(mMatrix);
+                mFragmentToDraw.getView().draw(canvas);
+                mSurface.unlockCanvasAndPost(canvas);
+                // -- Indicates that the texture should be updated on the OpenGL thread.
+                mShouldUpdateTexture = true;
+            }
+        };
+
         @Override
         protected void onRender(long ellapsedRealtime, double deltaTime) {
-            super.onRender(ellapsedRealtime, deltaTime);
-            mContainer.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
+            if (mSurface != null && mFrameCount++ >= (mFrameRate * 0.25)) {
+                mPlane.setVisible(isShowGIF);
+                mFrameCount = 0;
+                mTextureHandler.post(mUpdateTexture);
+            }
+            if (mShouldUpdateTexture) {
+                mStreamingTexture.update();
+                mShouldUpdateTexture = false;
+            }
 
             if (isBuildMask) {
                 showMaskModel();
@@ -1006,6 +1073,9 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     });
                 }
             }
+
+            super.onRender(ellapsedRealtime, deltaTime);
+            mContainer.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
         }
 
         void setAccelerometerValues(float x, float y, float z) {
@@ -1082,9 +1152,45 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     }
                 }
 
+                mPlane = new Plane(0.5f, 0.5f, 1, 1);
+                mPlane.setColor(0);
+                mPlane.setPosition(0, -0.25f, 0.2f);
+                mStreamingTexture = new StreamingTexture("viewTexture", this);
+                Material material = new Material();
+                material.setColorInfluence(0);
+                try {
+                    material.addTexture(mStreamingTexture);
+                } catch (ATexture.TextureException e) {
+                    e.printStackTrace();
+                }
+                mPlane.setMaterial(material);
+                mPlane.setVisible(isShowGIF);
+                mContainer.addChild(mPlane);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        @Override
+        public void setSurface(Surface surface) {
+            mSurface = surface;
+            mStreamingTexture.getSurfaceTexture().setDefaultBufferSize(512, 512);
+        }
+    }
+
+    public static final class FragmentToDraw extends Fragment {
+        ImageView mImageView;
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            final View view = inflater.inflate(R.layout.view_to_texture, container, false);
+            mImageView = (ImageView) view.findViewById(R.id.iv_texture);
+            Glide.with(this).load(R.drawable.wow).asGif()
+                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                    .into(mImageView);
+            view.setVisibility(View.INVISIBLE);
+            return view;
         }
     }
 
