@@ -1,4 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item type="id" name="view_to_texture_frame" />
+
+    <item type="id" name="filter0" />
+    <item type="id" name="filter1" />
+    <item type="id" name="filter2" />
+    <item type="id" name="filter3" />
+    <item type="id" name="filter4" />
+    <item type="id" name="filter5" />
+    <item type="id" name="filter6" />
+    <item type="id" name="filter7" />
+    <item type="id" name="filter8" />
+    <item type="id" name="filter9" />
+    <item type="id" name="filter10" />
+    <item type="id" name="filter11" />
+    <item type="id" name="filter12" />
+    <item type="id" name="filter13" />
+    <item type="id" name="filter14" />
+    <item type="id" name="filter15" />
+    <item type="id" name="filter16" />
+    <item type="id" name="filter17" />
+    <item type="id" name="filter18" />
+    <item type="id" name="filter19" />
+    <item type="id" name="filter20" />
 </resources>

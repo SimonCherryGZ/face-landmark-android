@@ -33,6 +33,7 @@ import android.widget.Toast;
 
 import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
+import com.simoncherry.artest.nekocode.MyCameraRenderer;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 import com.simoncherry.artest.ui.custom.AutoFitTextureView;
 import com.simoncherry.artest.ui.custom.TrasparentTitleView;
@@ -77,6 +78,7 @@ public class CameraTestFragment extends AExampleFragment {
     private Context mContext;
     private Handler mUIHandler;
     private Paint mFaceLandmarkPaint;
+    private MyCameraRenderer mCameraRenderer;
 
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
@@ -234,7 +236,11 @@ public class CameraTestFragment extends AExampleFragment {
             if (mOnGetPreviewListener == null) {
                 initGetPreviewListener();
             }
-            textureView.setSurfaceTextureListener(surfaceTextureListener);
+            if (mCameraRenderer == null) {
+                mCameraRenderer = new MyCameraRenderer(mContext);
+            }
+//            textureView.setSurfaceTextureListener(surfaceTextureListener);
+            textureView.setSurfaceTextureListener(mCameraRenderer);
         }
     }
 

@@ -70,7 +70,7 @@ public class CameraUtils {
                     // This method is called when the camera is opened.  We start camera preview here.
                     mCameraOpenCloseLock.release();
                     mCameraDevice = cd;
-                    createCameraPreviewSession();
+//                    createCameraPreviewSession();
                 }
 
                 @Override
@@ -246,7 +246,6 @@ public class CameraUtils {
         if (null == mTextureView || null == mPreviewSize) {
             return;
         }
-//        final int rotation = mActivity.getWindowManager().getDefaultDisplay().getRotation();
         final Matrix matrix = new Matrix();
         final RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
         final RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
@@ -270,7 +269,6 @@ public class CameraUtils {
     public static void openCamera(final int width, final int height) {
         setUpCameraOutputs(width, height);
         configureTransform(width, height);
-//        final CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
         try {
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
@@ -330,6 +328,73 @@ public class CameraUtils {
             final SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
 
+            // We configure the size of default buffer to be the size of camera preview we want.
+            texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+
+            // This is the output Surface we need to start preview.
+            final Surface surface = new Surface(texture);
+
+            // We set up a CaptureRequest.Builder with the output Surface.
+            mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            mPreviewRequestBuilder.addTarget(surface);
+
+            Log.i(TAG, "Opening camera preview: " + mPreviewSize.getWidth() + "x" + mPreviewSize.getHeight());
+
+            // Create the reader for the preview frames.
+            mPreviewReader =
+                    ImageReader.newInstance(
+                            mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.YUV_420_888, 2);
+
+            mPreviewReader.setOnImageAvailableListener(mOnGetPreviewListener, mBackgroundHandler);
+            mPreviewRequestBuilder.addTarget(mPreviewReader.getSurface());
+
+            // Here, we create a CameraCaptureSession for camera preview.
+            mCameraDevice.createCaptureSession(
+                    Arrays.asList(surface, mPreviewReader.getSurface()),
+                    new CameraCaptureSession.StateCallback() {
+
+                        @Override
+                        public void onConfigured(@NonNull final CameraCaptureSession cameraCaptureSession) {
+                            // The camera is already closed
+                            if (null == mCameraDevice) {
+                                return;
+                            }
+
+                            // When the session is ready, we start displaying the preview.
+                            mCaptureSession = cameraCaptureSession;
+                            try {
+                                // Auto focus should be continuous for camera preview.
+                                mPreviewRequestBuilder.set(
+                                        CaptureRequest.CONTROL_AF_MODE,
+                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                // Flash is automatically enabled when necessary.
+                                mPreviewRequestBuilder.set(
+                                        CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+
+                                // Finally, we start displaying the camera preview.
+                                mPreviewRequest = mPreviewRequestBuilder.build();
+                                mCaptureSession.setRepeatingRequest(
+                                        mPreviewRequest, mCaptureCallback, mBackgroundHandler);
+                            } catch (final CameraAccessException e) {
+                                Log.e(TAG, "Exception!", e);
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(@NonNull final CameraCaptureSession cameraCaptureSession) {
+                        }
+                    },
+                    null);
+        } catch (final CameraAccessException e) {
+            Log.e(TAG, "Exception!", e);
+        }
+    }
+
+    public static void createCameraPreviewSession(SurfaceTexture texture) {
+        try {
+//            final SurfaceTexture texture = mTextureView.getSurfaceTexture();
+//            assert texture != null;
+//
             // We configure the size of default buffer to be the size of camera preview we want.
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
 
