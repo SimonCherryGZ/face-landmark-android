@@ -184,7 +184,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setModelResId(R.raw.glasses_obj);
         ornament.setImgResId(R.drawable.ic_glasses);
         ornament.setScale(0.005f);
-        ornament.setOffset(0, 0, 0.15f);
+        ornament.setOffset(0, 0, 0.2f);
         ornament.setRotate(-90.0f, 90.0f, 90.0f);
         ornament.setColor(Color.BLACK);
         return ornament;
@@ -195,7 +195,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setModelResId(R.raw.moustache_obj);
         ornament.setImgResId(R.drawable.ic_moustache);
         ornament.setScale(0.15f);
-        ornament.setOffset(0, -0.3f, 0.15f);
+        ornament.setOffset(0, -0.25f, 0.2f);
         ornament.setRotate(-90.0f, 90.0f, 90.0f);
         ornament.setColor(Color.BLACK);
         return ornament;
@@ -226,7 +226,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setModelResId(R.raw.tiger_nose_obj);
         ornament.setImgResId(R.drawable.ic_tiger);
         ornament.setScale(0.002f);
-        ornament.setOffset(0, -0.3f, 0.1f);
+        ornament.setOffset(0, -0.3f, 0.2f);
         ornament.setRotate(0.0f, 0.0f, 0.0f);
         ornament.setColor(0xffe06666);
         return ornament;
