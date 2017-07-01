@@ -65,7 +65,7 @@ import com.simoncherry.artest.model.ImageBean;
 import com.simoncherry.artest.model.Ornament;
 import com.simoncherry.artest.presenter.ARFacePresenter;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
-import com.simoncherry.artest.ui.adapter.faceAdapter;
+import com.simoncherry.artest.ui.adapter.FaceAdapter;
 import com.simoncherry.artest.ui.adapter.OrnamentAdapter;
 import com.simoncherry.artest.ui.custom.AutoFitTextureView;
 import com.simoncherry.artest.ui.custom.CustomBottomSheet;
@@ -126,7 +126,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private RecyclerView mRvOrnament;
     private TextView mTvCameraHint;
     private TextView mTvSearchHint;
-    private faceAdapter mFaceAdapter;
+    private FaceAdapter mFaceAdapter;
     private CustomBottomSheet mFaceSheet;
     private OrnamentAdapter mOrnamentAdapter;
     private CustomBottomSheet mOrnamentSheet;
@@ -316,8 +316,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     }
 
     private void initFaceSheet() {
-        mFaceAdapter = new faceAdapter(mContext, mImages);
-        mFaceAdapter.setOnItemClickListener(new faceAdapter.OnItemClickListener() {
+        mFaceAdapter = new FaceAdapter(mContext, mImages);
+        mFaceAdapter.setOnItemClickListener(new FaceAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(String path) {
                 Toast.makeText(mContext, path, Toast.LENGTH_SHORT).show();

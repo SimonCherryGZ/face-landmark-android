@@ -19,6 +19,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
@@ -35,7 +37,9 @@ import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.nekocode.MyCameraRenderer;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
+import com.simoncherry.artest.ui.adapter.FilterAdapter;
 import com.simoncherry.artest.ui.custom.AutoFitTextureView;
+import com.simoncherry.artest.ui.custom.CustomBottomSheet;
 import com.simoncherry.artest.ui.custom.TrasparentTitleView;
 import com.simoncherry.artest.util.BitmapUtils;
 import com.simoncherry.artest.util.CameraUtils;
@@ -74,6 +78,9 @@ public class CameraTestFragment extends AExampleFragment {
     private TrasparentTitleView mScoreView;
     private ImageView ivDraw;
     private ProgressDialog mDialog;
+    private CustomBottomSheet mFilterSheet;
+    private RecyclerView mRvFilter;
+    private FilterAdapter mFilterAdapter;
 
     private Context mContext;
     private Handler mUIHandler;
@@ -85,6 +92,7 @@ public class CameraTestFragment extends AExampleFragment {
     private HandlerThread inferenceThread;
     private Handler inferenceHandler;
 
+    private List<Integer> mFilterData;
     private float lastX = 0;
     private float lastY = 0;
     private float lastZ = 0;
@@ -130,11 +138,17 @@ public class CameraTestFragment extends AExampleFragment {
 
     @Override
     protected int getLayoutId() {
-        return R.layout.fragment_ar_mask;
+        return R.layout.fragment_camera_test;
     }
 
     @Override
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
+        initView(view);
+        initFilterSheet();
+        initCamera();
+    }
+
+    private void initView(View view) {
         textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
         ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
@@ -144,7 +158,7 @@ public class CameraTestFragment extends AExampleFragment {
         CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
         CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
         Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
-        Button btnSwapFace = (Button) view.findViewById(R.id.btn_swap_face);
+        Button btnShowFilter = (Button) view.findViewById(R.id.btn_show_filter);
 
         checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -186,23 +200,42 @@ public class CameraTestFragment extends AExampleFragment {
             }
         });
 
-        btnSwapFace.setOnClickListener(new View.OnClickListener() {
+        btnShowFilter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        String[] pathArray = new String[2];
-                        pathArray[0] = "/storage/emulated/0/dlib/20130821040137899.jpg";
-                        pathArray[1] = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                        String texture = "/storage/emulated/0/BuildMask/capture_face.jpg";
-                        OBJUtils.swapFace(getContext(), pathArray, texture);
-                        isBuildMask = true;
-                    }
-                });
+                mFilterSheet.show();
+            }
+        });
+    }
+
+    private void initFilterSheet() {
+        mFilterData = new ArrayList<>();
+        for (int i=0; i<20; i++) {
+            mFilterData.add(i);
+        }
+
+        mFilterAdapter = new FilterAdapter(mContext, mFilterData);
+        mFilterAdapter.setOnItemClickListener(new FilterAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                String resName = "filter" + position;
+                int resId = getResources().getIdentifier(resName, "string", mContext.getPackageName());
+                mCameraRenderer.setSelectedFilter(resId);
             }
         });
 
+        View sheetView = LayoutInflater.from(mContext)
+                .inflate(R.layout.layout_filter_sheet, null);
+        mRvFilter = (RecyclerView) sheetView.findViewById(R.id.rv_filter);
+        mRvFilter.setAdapter(mFilterAdapter);
+        mRvFilter.setLayoutManager(new LinearLayoutManager(mContext, LinearLayoutManager.HORIZONTAL, false));
+        mFilterSheet = new CustomBottomSheet(mContext);
+        mFilterSheet.setContentView(sheetView);
+        mFilterSheet.getWindow().findViewById(R.id.design_bottom_sheet)
+                .setBackgroundResource(android.R.color.transparent);
+    }
+
+    private void initCamera() {
         CameraManager cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         int orientation = getResources().getConfiguration().orientation;
         int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();

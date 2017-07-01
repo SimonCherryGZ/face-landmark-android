@@ -17,11 +17,11 @@ import java.util.List;
  * Created by Simon on 2017/6/23.
  */
 
-public class faceAdapter extends RecyclerView.Adapter<faceAdapter.MyViewHolder> {
+public class FaceAdapter extends RecyclerView.Adapter<FaceAdapter.MyViewHolder> {
     private Context mContext;
     private List<ImageBean> mData;
 
-    public faceAdapter(Context mContext, List<ImageBean> mData) {
+    public FaceAdapter(Context mContext, List<ImageBean> mData) {
         this.mContext = mContext;
         this.mData = mData;
     }
