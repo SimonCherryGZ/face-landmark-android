@@ -1,68 +1,43 @@
 package com.simoncherry.artest.ui.fragment;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.RectF;
-import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.CaptureResult;
-import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.ImageReader;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Size;
-import android.util.SparseArray;
-import android.util.SparseIntArray;
 import android.view.LayoutInflater;
-import android.view.Surface;
-import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.simoncherry.artest.MediaLoaderCallback;
 import com.simoncherry.artest.OnGetImageListener;
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.contract.ARFaceContract;
 import com.simoncherry.artest.model.ImageBean;
 import com.simoncherry.artest.model.Ornament;
+import com.simoncherry.artest.nekocode.MyCameraRenderer;
 import com.simoncherry.artest.presenter.ARFacePresenter;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 import com.simoncherry.artest.ui.adapter.FaceAdapter;
@@ -71,6 +46,7 @@ import com.simoncherry.artest.ui.custom.AutoFitTextureView;
 import com.simoncherry.artest.ui.custom.CustomBottomSheet;
 import com.simoncherry.artest.ui.custom.TrasparentTitleView;
 import com.simoncherry.artest.util.BitmapUtils;
+import com.simoncherry.artest.util.CameraUtils;
 import com.simoncherry.artest.util.FileUtils;
 import com.simoncherry.artest.util.OBJUtils;
 import com.simoncherry.dlib.VisionDetRet;
@@ -81,24 +57,16 @@ import org.rajawali3d.animation.Animation3D;
 import org.rajawali3d.animation.AnimationGroup;
 import org.rajawali3d.lights.DirectionalLight;
 import org.rajawali3d.loader.LoaderOBJ;
-import org.rajawali3d.materials.Material;
 import org.rajawali3d.materials.textures.ATexture;
-import org.rajawali3d.materials.textures.StreamingTexture;
 import org.rajawali3d.materials.textures.Texture;
 import org.rajawali3d.math.vector.Vector3;
-import org.rajawali3d.primitives.Plane;
 import org.rajawali3d.renderer.ISurfaceRenderer;
 import org.rajawali3d.view.SurfaceView;
 import org.reactivestreams.Subscription;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import hugo.weaving.DebugLog;
 import io.realm.Realm;
@@ -117,7 +85,6 @@ import io.realm.RealmResults;
  */
 public class ARFaceFragment extends AExampleFragment implements ARFaceContract.View{
     private static final String TAG = "ARMaskFragment";
-    private static final int MINIMUM_PREVIEW_SIZE = 320;
 
     private TrasparentTitleView mScoreView;
     private AutoFitTextureView textureView;
@@ -131,13 +98,12 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private OrnamentAdapter mOrnamentAdapter;
     private CustomBottomSheet mOrnamentSheet;
     private ProgressDialog mDialog;
-    private FragmentToDraw mFragmentToDraw;
 
     private Context mContext;
     private ARFacePresenter mPresenter;
-    private Handler mUIHandler;
-    private Handler mTextureHandler;
     private Paint mFaceLandmarkPaint;
+    private MyCameraRenderer mCameraRenderer;
+    private OnGetImageListener mOnGetPreviewListener = null;
 
     private List<ImageBean> mImages = new ArrayList<>();
     private List<Ornament> mOrnaments = new ArrayList<>();
@@ -151,32 +117,14 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private float lastZ = 0;
     private boolean isDrawLandMark = true;
     private boolean isBuildMask = false;
-    private boolean isShowGIF = false;
     private String mSwapPath = "/storage/emulated/0/dlib/20130821040137899.jpg";
     private int mOrnamentId = -1;
 
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-    }
-
-    private String cameraId;
-    private CameraCaptureSession captureSession;
-    private CameraDevice cameraDevice;
-    private Size previewSize;
-
+    private Handler mUIHandler;
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private HandlerThread inferenceThread;
     private Handler inferenceHandler;
-    private ImageReader previewReader;
-    private CaptureRequest.Builder previewRequestBuilder;
-    private CaptureRequest previewRequest;
-    private final Semaphore cameraOpenCloseLock = new Semaphore(1);
 
     public static ARFaceFragment newInstance() {
         return new ARFaceFragment();
@@ -187,19 +135,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         super.onCreateView(inflater, container, savedInstanceState);
         mContext = getContext();
         mPresenter = new ARFacePresenter(mContext, this);
-        mTextureHandler = new Handler(Looper.getMainLooper());
-
-        final FrameLayout fragmentFrame = new FrameLayout(getActivity());
-        final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(512, 512);
-        fragmentFrame.setLayoutParams(params);
-        fragmentFrame.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_bright));
-        fragmentFrame.setId(R.id.view_to_texture_frame);
-        fragmentFrame.setVisibility(View.INVISIBLE);
-        mLayout.addView(fragmentFrame);
-
-        mFragmentToDraw = new FragmentToDraw();
-        getActivity().getSupportFragmentManager().beginTransaction().add(R.id.view_to_texture_frame, mFragmentToDraw, "custom").commit();
-
         return mLayout;
     }
 
@@ -215,6 +150,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         initOrnamentSheet();
         initOrnamentData();
         initRealm();
+        initCamera();
     }
 
     private void initView(View view) {
@@ -233,86 +169,79 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         Button btnOrnament = (Button) view.findViewById(R.id.btn_ornament_sheet);
         Button btnResetFace = (Button) view.findViewById(R.id.btn_reset_face);
 
-        checkShowWindow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mOnGetPreviewListener.setWindowVisible(true);
-                } else {
-                    mOnGetPreviewListener.setWindowVisible(false);
+                int id = buttonView.getId();
+                switch (id) {
+                    case R.id.check_show_window:
+                        if (isChecked) {
+                            mOnGetPreviewListener.setWindowVisible(true);
+                        } else {
+                            mOnGetPreviewListener.setWindowVisible(false);
+                        }
+                        break;
+                    case R.id.check_show_model:
+                        ARFaceFragment.AccelerometerRenderer renderer1 = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
+                        if (renderer1.mMonkey != null) {
+                            renderer1.mMonkey.setVisible(isChecked);
+                        }
+                        break;
+                    case R.id.check_land_mark:
+                        isDrawLandMark = isChecked;
+                        break;
+                    case R.id.check_draw_mode:
+                        ((ARFaceFragment.AccelerometerRenderer) mRenderer).toggleWireframe();
+                        break;
+                    case R.id.check_show_ornament:
+                        ARFaceFragment.AccelerometerRenderer renderer2 = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
+                        if (renderer2.mOrnament != null) {
+                            renderer2.mOrnament.setVisible(isChecked);
+                        }
+                        break;
                 }
             }
-        });
+        };
 
-        checkShowModel.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        checkShowWindow.setOnCheckedChangeListener(onCheckedChangeListener);
+        checkShowModel.setOnCheckedChangeListener(onCheckedChangeListener);
+        checkLandMark.setOnCheckedChangeListener(onCheckedChangeListener);
+        checkDrawMode.setOnCheckedChangeListener(onCheckedChangeListener);
+        checkShowOrnament.setOnCheckedChangeListener(onCheckedChangeListener);
+
+        View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                ARFaceFragment.AccelerometerRenderer renderer = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
-                if (renderer.mMonkey != null) {
-                    renderer.mMonkey.setVisible(isChecked);
+            public void onClick(View v) {
+                int id = v.getId();
+                switch (id) {
+                    case R.id.btn_build_model:
+                        mTvCameraHint.setText("正在检测人脸");
+                        mTvCameraHint.setVisibility(View.VISIBLE);
+                        mOnGetPreviewListener.setIsNeedMask(true);
+                        break;
+                    case R.id.btn_face_sheet:
+                        mFaceSheet.show();
+                        break;
+                    case R.id.btn_ornament_sheet:
+                        mOrnamentSheet.show();
+                        break;
+                    case R.id.btn_reset_face:
+                        new Handler().post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mPresenter.resetFaceTexture();
+                                isBuildMask = true;
+                            }
+                        });
+                        break;
                 }
             }
-        });
+        };
 
-        checkLandMark.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                isDrawLandMark = isChecked;
-            }
-        });
-
-        checkDrawMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                ((ARFaceFragment.AccelerometerRenderer) mRenderer).toggleWireframe();
-            }
-        });
-
-        checkShowOrnament.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                ARFaceFragment.AccelerometerRenderer renderer = ((ARFaceFragment.AccelerometerRenderer) mRenderer);
-                if (renderer.mOrnament != null) {
-                    renderer.mOrnament.setVisible(isChecked);
-                }
-            }
-        });
-
-        btnBuildModel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mTvCameraHint.setText("正在检测人脸");
-                mTvCameraHint.setVisibility(View.VISIBLE);
-                mOnGetPreviewListener.setIsNeedMask(true);
-            }
-        });
-
-        btnFaceSheet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mFaceSheet.show();
-            }
-        });
-
-        btnOrnament.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mOrnamentSheet.show();
-            }
-        });
-
-        btnResetFace.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new Handler().post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mPresenter.resetFaceTexture();
-                        isBuildMask = true;
-                    }
-                });
-            }
-        });
+        btnBuildModel.setOnClickListener(onClickListener);
+        btnFaceSheet.setOnClickListener(onClickListener);
+        btnOrnament.setOnClickListener(onClickListener);
+        btnResetFace.setOnClickListener(onClickListener);
     }
 
     private void initFaceSheet() {
@@ -398,6 +327,13 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         });
     }
 
+    private void initCamera() {
+        CameraManager cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+        int orientation = getResources().getConfiguration().orientation;
+        int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
+        CameraUtils.init(textureView, cameraManager, orientation, rotation);
+    }
+
     private void showDialog(final String title, final String content) {
         mDialog = ProgressDialog.show(mContext, title, content, true);
     }
@@ -405,6 +341,19 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private void dismissDialog() {
         if (mDialog != null) {
             mDialog.dismiss();
+        }
+    }
+
+    private void showToast(final String text) {
+        final Activity activity = getActivity();
+        if (activity != null) {
+            activity.runOnUiThread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
+                        }
+                    });
         }
     }
 
@@ -429,9 +378,15 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
         if (textureView.isAvailable()) {
-            openCamera(textureView.getWidth(), textureView.getHeight());
+            CameraUtils.openCamera(textureView.getWidth(), textureView.getHeight());
         } else {
-            textureView.setSurfaceTextureListener(surfaceTextureListener);
+            if (mOnGetPreviewListener == null) {
+                initGetPreviewListener();
+            }
+            if (mCameraRenderer == null) {
+                mCameraRenderer = new MyCameraRenderer(mContext);
+            }
+            textureView.setSurfaceTextureListener(mCameraRenderer);
         }
 
         if (mediaLoaderCallback == null) {
@@ -441,7 +396,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
 
     @Override
     public void onPause() {
-        closeCamera();
+        CameraUtils.closeCamera();
         stopBackgroundThread();
         super.onPause();
     }
@@ -456,235 +411,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mRvOrnament.setAdapter(null);
         realmResults.removeAllChangeListeners();
         realm.close();
-    }
-
-    private final TextureView.SurfaceTextureListener surfaceTextureListener =
-            new TextureView.SurfaceTextureListener() {
-                @Override
-                public void onSurfaceTextureAvailable(
-                        final SurfaceTexture texture, final int width, final int height) {
-                    openCamera(width, height);
-                }
-
-                @Override
-                public void onSurfaceTextureSizeChanged(
-                        final SurfaceTexture texture, final int width, final int height) {
-                    configureTransform(width, height);
-                }
-
-                @Override
-                public boolean onSurfaceTextureDestroyed(final SurfaceTexture texture) {
-                    return true;
-                }
-
-                @Override
-                public void onSurfaceTextureUpdated(final SurfaceTexture texture) {
-                }
-            };
-
-    private final CameraDevice.StateCallback stateCallback =
-            new CameraDevice.StateCallback() {
-                @Override
-                public void onOpened(final CameraDevice cd) {
-                    // This method is called when the camera is opened.  We start camera preview here.
-                    cameraOpenCloseLock.release();
-                    cameraDevice = cd;
-                    createCameraPreviewSession();
-                }
-
-                @Override
-                public void onDisconnected(final CameraDevice cd) {
-                    cameraOpenCloseLock.release();
-                    cd.close();
-                    cameraDevice = null;
-
-                    if (mOnGetPreviewListener != null) {
-                        mOnGetPreviewListener.deInitialize();
-                    }
-                }
-
-                @Override
-                public void onError(final CameraDevice cd, final int error) {
-                    cameraOpenCloseLock.release();
-                    cd.close();
-                    cameraDevice = null;
-                    final Activity activity = getActivity();
-                    if (null != activity) {
-                        activity.finish();
-                    }
-
-                    if (mOnGetPreviewListener != null) {
-                        mOnGetPreviewListener.deInitialize();
-                    }
-                }
-            };
-
-    private void showToast(final String text) {
-        final Activity activity = getActivity();
-        if (activity != null) {
-            activity.runOnUiThread(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-                        }
-                    });
-        }
-    }
-
-    @SuppressLint("LongLogTag")
-    @DebugLog
-    private static Size chooseOptimalSize(
-            final Size[] choices, final int width, final int height, final Size aspectRatio) {
-        // Collect the supported resolutions that are at least as big as the preview Surface
-        final List<Size> bigEnough = new ArrayList<Size>();
-        for (final Size option : choices) {
-            if (option.getHeight() >= MINIMUM_PREVIEW_SIZE && option.getWidth() >= MINIMUM_PREVIEW_SIZE) {
-                Log.i(TAG, "Adding size: " + option.getWidth() + "x" + option.getHeight());
-                bigEnough.add(option);
-            } else {
-                Log.i(TAG, "Not adding size: " + option.getWidth() + "x" + option.getHeight());
-            }
-        }
-
-        // Pick the smallest of those, assuming we found any
-        if (bigEnough.size() > 0) {
-            final Size chosenSize = Collections.min(bigEnough, new ARFaceFragment.CompareSizesByArea());
-            Log.i(TAG, "Chosen size: " + chosenSize.getWidth() + "x" + chosenSize.getHeight());
-            return chosenSize;
-        } else {
-            Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
-        }
-    }
-
-    @DebugLog
-    @SuppressLint("LongLogTag")
-    private void setUpCameraOutputs(final int width, final int height) {
-        final Activity activity = getActivity();
-        final CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-        try {
-            SparseArray<Integer> cameraFaceTypeMap = new SparseArray<>();
-            // Check the facing types of camera devices
-            for (final String cameraId : manager.getCameraIdList()) {
-                final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-                final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    if (cameraFaceTypeMap.get(CameraCharacteristics.LENS_FACING_FRONT) != null) {
-                        cameraFaceTypeMap.append(CameraCharacteristics.LENS_FACING_FRONT, cameraFaceTypeMap.get(CameraCharacteristics.LENS_FACING_FRONT) + 1);
-                    } else {
-                        cameraFaceTypeMap.append(CameraCharacteristics.LENS_FACING_FRONT, 1);
-                    }
-                }
-
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
-                    if (cameraFaceTypeMap.get(CameraCharacteristics.LENS_FACING_FRONT) != null) {
-                        cameraFaceTypeMap.append(CameraCharacteristics.LENS_FACING_BACK, cameraFaceTypeMap.get(CameraCharacteristics.LENS_FACING_BACK) + 1);
-                    } else {
-                        cameraFaceTypeMap.append(CameraCharacteristics.LENS_FACING_BACK, 1);
-                    }
-                }
-            }
-
-            Integer num_facing_back_camera = cameraFaceTypeMap.get(CameraCharacteristics.LENS_FACING_FRONT);  // by simon at 2017/04/25 -- 换前置
-            for (final String cameraId : manager.getCameraIdList()) {
-                final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-                final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                // If facing back camera or facing external camera exist, we won't use facing front camera
-                if (num_facing_back_camera != null && num_facing_back_camera > 0) {
-                    // We don't use a front facing camera in this sample if there are other camera device facing types
-                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {  // by simon at 2017/04/25 -- 换前置
-                        continue;
-                    }
-                }
-
-                final StreamConfigurationMap map =
-                        characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-
-                if (map == null) {
-                    continue;
-                }
-
-                // For still image captures, we use the largest available size.
-                final Size largest =
-                        Collections.max(
-                                Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888)),
-                                new ARFaceFragment.CompareSizesByArea());
-
-                // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
-                // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
-                // garbage capture data.
-                previewSize =
-                        chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class), width, height, largest);
-
-                // We fit the aspect ratio of TextureView to the size of preview we picked.
-                final int orientation = getResources().getConfiguration().orientation;
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    textureView.setAspectRatio(previewSize.getWidth(), previewSize.getHeight());
-                } else {
-                    textureView.setAspectRatio(previewSize.getHeight(), previewSize.getWidth());
-                }
-
-                ARFaceFragment.this.cameraId = cameraId;
-                return;
-            }
-        } catch (final CameraAccessException e) {
-            Log.e(TAG, "Exception!",  e);
-        } catch (final NullPointerException e) {
-            // Currently an NPE is thrown when the Camera2API is used but not supported on the
-            // device this code runs.
-//            ErrorDialog.newInstance(getString(R.string.camera_error))
-//                    .show(getChildFragmentManager(), FRAGMENT_DIALOG);
-        }
-    }
-
-    @SuppressLint("LongLogTag")
-    @DebugLog
-    private void openCamera(final int width, final int height) {
-        setUpCameraOutputs(width, height);
-        configureTransform(width, height);
-        final Activity activity = getActivity();
-        final CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-        try {
-            if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
-                throw new RuntimeException("Time out waiting to lock camera opening.");
-            }
-            if (ActivityCompat.checkSelfPermission(this.getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "checkSelfPermission CAMERA");
-            }
-            manager.openCamera(cameraId, stateCallback, backgroundHandler);
-            Log.d(TAG, "open Camera");
-        } catch (final CameraAccessException e) {
-            Log.e(TAG, "Exception!", e);
-        } catch (final InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
-        }
-    }
-
-    @DebugLog
-    private void closeCamera() {
-        try {
-            cameraOpenCloseLock.acquire();
-            if (null != captureSession) {
-                captureSession.close();
-                captureSession = null;
-            }
-            if (null != cameraDevice) {
-                cameraDevice.close();
-                cameraDevice = null;
-            }
-            if (null != previewReader) {
-                previewReader.close();
-                previewReader = null;
-            }
-            if (null != mOnGetPreviewListener) {
-                mOnGetPreviewListener.deInitialize();
-            }
-        } catch (final InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
-        } finally {
-            cameraOpenCloseLock.release();
-        }
+        CameraUtils.releaseReferences();
     }
 
     @DebugLog
@@ -696,6 +423,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         inferenceThread = new HandlerThread("InferenceThread");
         inferenceThread.start();
         inferenceHandler = new Handler(inferenceThread.getLooper());
+
+        CameraUtils.setBackgroundHandler(backgroundHandler);
     }
 
     @SuppressLint("LongLogTag")
@@ -716,92 +445,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         }
     }
 
-    private final OnGetImageListener mOnGetPreviewListener = new OnGetImageListener();
-
-    private final CameraCaptureSession.CaptureCallback captureCallback =
-            new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureProgressed(
-                        @NonNull final CameraCaptureSession session,
-                        @NonNull final CaptureRequest request,
-                        @NonNull final CaptureResult partialResult) {}
-
-                @Override
-                public void onCaptureCompleted(
-                        @NonNull final CameraCaptureSession session,
-                        @NonNull final CaptureRequest request,
-                        @NonNull final TotalCaptureResult result) {}
-            };
-
-    @SuppressLint("LongLogTag")
-    @DebugLog
-    private void createCameraPreviewSession() {
-        try {
-            final SurfaceTexture texture = textureView.getSurfaceTexture();
-            assert texture != null;
-
-            // We configure the size of default buffer to be the size of camera preview we want.
-            texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
-
-            // This is the output Surface we need to start preview.
-            final Surface surface = new Surface(texture);
-
-            // We set up a CaptureRequest.Builder with the output Surface.
-            previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            previewRequestBuilder.addTarget(surface);
-
-            Log.i(TAG, "Opening camera preview: " + previewSize.getWidth() + "x" + previewSize.getHeight());
-
-            // Create the reader for the preview frames.
-            previewReader =
-                    ImageReader.newInstance(
-                            previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
-
-            previewReader.setOnImageAvailableListener(mOnGetPreviewListener, backgroundHandler);
-            previewRequestBuilder.addTarget(previewReader.getSurface());
-
-            // Here, we create a CameraCaptureSession for camera preview.
-            cameraDevice.createCaptureSession(
-                    Arrays.asList(surface, previewReader.getSurface()),
-                    new CameraCaptureSession.StateCallback() {
-
-                        @Override
-                        public void onConfigured(@NonNull final CameraCaptureSession cameraCaptureSession) {
-                            // The camera is already closed
-                            if (null == cameraDevice) {
-                                return;
-                            }
-
-                            // When the session is ready, we start displaying the preview.
-                            captureSession = cameraCaptureSession;
-                            try {
-                                // Auto focus should be continuous for camera preview.
-                                previewRequestBuilder.set(
-                                        CaptureRequest.CONTROL_AF_MODE,
-                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                                // Flash is automatically enabled when necessary.
-                                previewRequestBuilder.set(
-                                        CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-
-                                // Finally, we start displaying the camera preview.
-                                previewRequest = previewRequestBuilder.build();
-                                captureSession.setRepeatingRequest(
-                                        previewRequest, captureCallback, backgroundHandler);
-                            } catch (final CameraAccessException e) {
-                                Log.e(TAG, "Exception!", e);
-                            }
-                        }
-
-                        @Override
-                        public void onConfigureFailed(@NonNull final CameraCaptureSession cameraCaptureSession) {
-                            showToast("Failed");
-                        }
-                    },
-                    null);
-        } catch (final CameraAccessException e) {
-            Log.e(TAG, "Exception!", e);
-        }
-
+    private void initGetPreviewListener() {
+        mOnGetPreviewListener = new OnGetImageListener();
         showDialog("提示", "正在初始化...");
         Thread mThread = new Thread() {
             @Override
@@ -819,7 +464,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 mUIHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        handleMouthOpen(results);
+//                        handleMouthOpen(results);
                         if (!isDrawLandMark) {
                             ivDraw.setImageResource(0);
                         }
@@ -868,6 +513,8 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 });
             }
         });
+
+        CameraUtils.setOnGetPreviewListener(mOnGetPreviewListener);
     }
 
     private void handleMouthOpen(List<VisionDetRet> results) {
@@ -878,8 +525,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             int mouthAmplitude = mouthBottom - mouthTop;
             String openMouth = "openMouth: " + mouthAmplitude;
             mTvCameraHint.setText(openMouth);
-
-            isShowGIF = mouthAmplitude >= 30;
         }
     }
 
@@ -892,23 +537,26 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         bounds.right = (int) (ret.getRight() * resizeRatio);
         bounds.bottom = (int) (ret.getBottom() * resizeRatio);
 
-        final Bitmap mBitmap = Bitmap.createBitmap(previewSize.getHeight(), previewSize.getWidth(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(mBitmap);
-        canvas.drawRect(bounds, mFaceLandmarkPaint);
+        Size previewSize = CameraUtils.getPreviewSize();
+        if (previewSize != null) {
+            final Bitmap mBitmap = Bitmap.createBitmap(previewSize.getHeight(), previewSize.getWidth(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(mBitmap);
+            canvas.drawRect(bounds, mFaceLandmarkPaint);
 
-        final ArrayList<Point> landmarks = ret.getFaceLandmarks();
-        for (Point point : landmarks) {
-            int pointX = (int) (point.x * resizeRatio);
-            int pointY = (int) (point.y * resizeRatio);
-            canvas.drawCircle(pointX, pointY, 2, mFaceLandmarkPaint);
-        }
-
-        mUIHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                ivDraw.setImageBitmap(mBitmap);
+            final ArrayList<Point> landmarks = ret.getFaceLandmarks();
+            for (Point point : landmarks) {
+                int pointX = (int) (point.x * resizeRatio);
+                int pointY = (int) (point.y * resizeRatio);
+                canvas.drawCircle(pointX, pointY, 2, mFaceLandmarkPaint);
             }
-        });
+
+            mUIHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    ivDraw.setImageBitmap(mBitmap);
+                }
+            });
+        }
     }
 
     private void rotateModel(float x, float y, float z) {
@@ -944,46 +592,10 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         }
     }
 
-    @DebugLog
-    private void configureTransform(final int viewWidth, final int viewHeight) {
-        final Activity activity = getActivity();
-        if (null == textureView || null == previewSize || null == activity) {
-            return;
-        }
-        final int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-        final Matrix matrix = new Matrix();
-        final RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
-        final RectF bufferRect = new RectF(0, 0, previewSize.getHeight(), previewSize.getWidth());
-        final float centerX = viewRect.centerX();
-        final float centerY = viewRect.centerY();
-        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
-            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
-            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
-            final float scale =
-                    Math.max(
-                            (float) viewHeight / previewSize.getHeight(),
-                            (float) viewWidth / previewSize.getWidth());
-            matrix.postScale(scale, scale, centerX, centerY);
-            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
-        } else if (Surface.ROTATION_180 == rotation) {
-            matrix.postRotate(180, centerX, centerY);
-        }
-        textureView.setTransform(matrix);
-    }
-
     @Override
     public void onSubscribe(Subscription subscription) {
         mSubscription = subscription;
         mSubscription.request(Long.MAX_VALUE);
-    }
-
-    private static class CompareSizesByArea implements Comparator<Size> {
-        @Override
-        public int compare(final Size lhs, final Size rhs) {
-            // We cast here to ensure the multiplications won't overflow
-            return Long.signum(
-                    (long) lhs.getWidth() * lhs.getHeight() - (long) rhs.getWidth() * rhs.getHeight());
-        }
     }
 
     @Override
@@ -997,19 +609,12 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         super.onBeforeApplyRenderer();
     }
 
-    private final class AccelerometerRenderer extends AExampleRenderer implements StreamingTexture.ISurfaceListener{
+    private final class AccelerometerRenderer extends AExampleRenderer{
         private DirectionalLight mLight;
         private Object3D mContainer;
         private Object3D mMonkey;
         private Object3D mOrnament;
         private Vector3 mAccValues;
-
-        private Object3D mPlane;
-        private int mFrameCount;
-        private Surface mSurface;
-        private StreamingTexture mStreamingTexture;
-        private volatile boolean mShouldUpdateTexture;
-        private final float[] mMatrix = new float[16];
 
         AccelerometerRenderer(Context context, @Nullable AExampleFragment fragment) {
             super(context, fragment);
@@ -1035,31 +640,9 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
             getCurrentScene().setBackgroundColor(0);
         }
 
-        final Runnable mUpdateTexture = new Runnable() {
-            public void run() {
-                // -- Draw the view on the canvas
-                final Canvas canvas = mSurface.lockCanvas(null);
-                canvas.drawColor(Color.TRANSPARENT);  // 不加这句的话，画面有残影，全是之前的动画轨迹
-                mStreamingTexture.getSurfaceTexture().getTransformMatrix(mMatrix);
-                mFragmentToDraw.getView().draw(canvas);
-                mSurface.unlockCanvasAndPost(canvas);
-                // -- Indicates that the texture should be updated on the OpenGL thread.
-                mShouldUpdateTexture = true;
-            }
-        };
-
         @Override
         protected void onRender(long ellapsedRealtime, double deltaTime) {
-            if (mSurface != null && mFrameCount++ >= (mFrameRate * 0.25)) {
-                mPlane.setVisible(isShowGIF);
-                mFrameCount = 0;
-                mTextureHandler.post(mUpdateTexture);
-            }
-            if (mShouldUpdateTexture) {
-                mStreamingTexture.update();
-                mShouldUpdateTexture = false;
-            }
-
+            super.onRender(ellapsedRealtime, deltaTime);
             if (isBuildMask) {
                 showMaskModel();
                 isBuildMask = false;
@@ -1074,7 +657,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                 }
             }
 
-            super.onRender(ellapsedRealtime, deltaTime);
             mContainer.setRotation(mAccValues.x, mAccValues.y, mAccValues.z);
         }
 
@@ -1151,46 +733,9 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                         animGroup.play();
                     }
                 }
-
-                mPlane = new Plane(0.5f, 0.5f, 1, 1);
-                mPlane.setColor(0);
-                mPlane.setPosition(0, -0.25f, 0.2f);
-                mStreamingTexture = new StreamingTexture("viewTexture", this);
-                Material material = new Material();
-                material.setColorInfluence(0);
-                try {
-                    material.addTexture(mStreamingTexture);
-                } catch (ATexture.TextureException e) {
-                    e.printStackTrace();
-                }
-                mPlane.setMaterial(material);
-                mPlane.setVisible(isShowGIF);
-                mContainer.addChild(mPlane);
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-
-        @Override
-        public void setSurface(Surface surface) {
-            mSurface = surface;
-            mStreamingTexture.getSurfaceTexture().setDefaultBufferSize(512, 512);
-        }
-    }
-
-    public static final class FragmentToDraw extends Fragment {
-        ImageView mImageView;
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            final View view = inflater.inflate(R.layout.view_to_texture, container, false);
-            mImageView = (ImageView) view.findViewById(R.id.iv_texture);
-            Glide.with(this).load(R.drawable.wow).asGif()
-                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                    .into(mImageView);
-            view.setVisibility(View.INVISIBLE);
-            return view;
         }
     }
 

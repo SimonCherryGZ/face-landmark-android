@@ -26,7 +26,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.simoncherry.artest.R;
-import com.simoncherry.artest.ui.fragment.CameraTestFragment;
+import com.simoncherry.artest.ui.fragment.ARFaceFragment;
 
 /**
  * Created by darrenl on 2016/5/20.
@@ -52,10 +52,10 @@ public class CameraActivity extends AppCompatActivity {
         if (null == savedInstanceState) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    //.replace(R.id.container, CameraConnectionFragment.newInstance())
-                    //.replace(R.id.container, ARMaskFragment.newInstance())
-//                    .replace(R.id.container, ARFaceFragment.newInstance())
-                    .replace(R.id.container, CameraTestFragment.newInstance())
+//                    .replace(R.id.container, CameraConnectionFragment.newInstance())
+//                    .replace(R.id.container, ARMaskFragment.newInstance())
+                    .replace(R.id.container, ARFaceFragment.newInstance())
+//                    .replace(R.id.container, CameraTestFragment.newInstance())
                     .commit();
         }
     }
