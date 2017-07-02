@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -18,16 +19,19 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +45,7 @@ import com.simoncherry.artest.nekocode.MyCameraRenderer;
 import com.simoncherry.artest.presenter.ARFacePresenter;
 import com.simoncherry.artest.rajawali3d.AExampleFragment;
 import com.simoncherry.artest.ui.adapter.FaceAdapter;
+import com.simoncherry.artest.ui.adapter.FilterAdapter;
 import com.simoncherry.artest.ui.adapter.OrnamentAdapter;
 import com.simoncherry.artest.ui.custom.AutoFitTextureView;
 import com.simoncherry.artest.ui.custom.CustomBottomSheet;
@@ -89,14 +94,18 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private TrasparentTitleView mScoreView;
     private AutoFitTextureView textureView;
     private ImageView ivDraw;
-    private RecyclerView mRvFace;
-    private RecyclerView mRvOrnament;
     private TextView mTvCameraHint;
     private TextView mTvSearchHint;
-    private FaceAdapter mFaceAdapter;
+    private LinearLayout mLayoutBottomBtn;
+    private RecyclerView mRvFace;
+    private RecyclerView mRvOrnament;
+    private RecyclerView mRvFilter;
     private CustomBottomSheet mFaceSheet;
-    private OrnamentAdapter mOrnamentAdapter;
     private CustomBottomSheet mOrnamentSheet;
+    private CustomBottomSheet mFilterSheet;
+    private FaceAdapter mFaceAdapter;
+    private OrnamentAdapter mOrnamentAdapter;
+    private FilterAdapter mFilterAdapter;
     private ProgressDialog mDialog;
 
     private Context mContext;
@@ -107,6 +116,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
 
     private List<ImageBean> mImages = new ArrayList<>();
     private List<Ornament> mOrnaments = new ArrayList<>();
+    private List<Integer> mFilters = new ArrayList<>();
     private MediaLoaderCallback mediaLoaderCallback = null;
     private Subscription mSubscription = null;
     private Realm realm;
@@ -149,6 +159,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         initFaceSheet();
         initOrnamentSheet();
         initOrnamentData();
+        initFilterSheet();
         initRealm();
         initCamera();
     }
@@ -158,6 +169,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         mScoreView = (TrasparentTitleView) view.findViewById(R.id.results);
         ivDraw = (ImageView) view.findViewById(R.id.iv_draw);
         mTvCameraHint = (TextView) view.findViewById(R.id.tv_hint);
+        mLayoutBottomBtn = (LinearLayout) view.findViewById(R.id.layout_bottom_btn);
 
         CheckBox checkShowWindow = (CheckBox) view.findViewById(R.id.check_show_window);
         CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
@@ -165,9 +177,10 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
         CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
         CheckBox checkShowOrnament = (CheckBox) view.findViewById(R.id.check_show_ornament);
         Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
+        Button btnResetFace = (Button) view.findViewById(R.id.btn_reset_face);
         Button btnFaceSheet = (Button) view.findViewById(R.id.btn_face_sheet);
         Button btnOrnament = (Button) view.findViewById(R.id.btn_ornament_sheet);
-        Button btnResetFace = (Button) view.findViewById(R.id.btn_reset_face);
+        Button btnFilterSheet = (Button) view.findViewById(R.id.btn_filter_sheet);
 
         CompoundButton.OnCheckedChangeListener onCheckedChangeListener = new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -219,12 +232,6 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                         mTvCameraHint.setVisibility(View.VISIBLE);
                         mOnGetPreviewListener.setIsNeedMask(true);
                         break;
-                    case R.id.btn_face_sheet:
-                        mFaceSheet.show();
-                        break;
-                    case R.id.btn_ornament_sheet:
-                        mOrnamentSheet.show();
-                        break;
                     case R.id.btn_reset_face:
                         new Handler().post(new Runnable() {
                             @Override
@@ -234,14 +241,25 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                             }
                         });
                         break;
+                    case R.id.btn_face_sheet:
+                        mFaceSheet.show();
+                        break;
+                    case R.id.btn_ornament_sheet:
+                        mOrnamentSheet.show();
+                        break;
+                    case R.id.btn_filter_sheet:
+                        mLayoutBottomBtn.setVisibility(View.GONE);
+                        mFilterSheet.show();
+                        break;
                 }
             }
         };
 
         btnBuildModel.setOnClickListener(onClickListener);
+        btnResetFace.setOnClickListener(onClickListener);
         btnFaceSheet.setOnClickListener(onClickListener);
         btnOrnament.setOnClickListener(onClickListener);
-        btnResetFace.setOnClickListener(onClickListener);
+        btnFilterSheet.setOnClickListener(onClickListener);
     }
 
     private void initFaceSheet() {
@@ -303,6 +321,39 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     private void initOrnamentData() {
         mOrnaments.addAll(mPresenter.getPresetOrnament());
         mOrnamentAdapter.notifyDataSetChanged();
+    }
+
+    private void initFilterSheet() {
+        for (int i=0; i<20; i++) {
+            mFilters.add(i);
+        }
+
+        mFilterAdapter = new FilterAdapter(mContext, mFilters);
+        mFilterAdapter.setOnItemClickListener(new FilterAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                String resName = "filter" + position;
+                int resId = getResources().getIdentifier(resName, "string", mContext.getPackageName());
+                mCameraRenderer.setSelectedFilter(resId);
+            }
+        });
+
+        View sheetView = LayoutInflater.from(mContext)
+                .inflate(R.layout.layout_filter_sheet, null);
+        mRvFilter = (RecyclerView) sheetView.findViewById(R.id.rv_filter);
+        mRvFilter.setAdapter(mFilterAdapter);
+        mRvFilter.setLayoutManager(new LinearLayoutManager(mContext, LinearLayoutManager.HORIZONTAL, false));
+        mFilterSheet = new CustomBottomSheet(mContext);
+        mFilterSheet.setContentView(sheetView);
+        mFilterSheet.getWindow().findViewById(R.id.design_bottom_sheet)
+                .setBackgroundResource(android.R.color.transparent);
+        mFilterSheet.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        mFilterSheet.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                mLayoutBottomBtn.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private void initRealm() {

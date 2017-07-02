@@ -112,6 +112,7 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/layout_bottom_btn"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_gravity="bottom"
@@ -125,6 +126,15 @@
             android:background="@android:color/transparent"
             android:textColor="@android:color/white"
             android:text="重建脸模"/>
+
+        <Button
+            android:id="@+id/btn_reset_face"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:textColor="@android:color/white"
+            android:text="还原"/>
 
         <Button
             android:id="@+id/btn_face_sheet"
@@ -145,13 +155,13 @@
             android:text="装饰"/>
 
         <Button
-            android:id="@+id/btn_reset_face"
+            android:id="@+id/btn_filter_sheet"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@android:color/transparent"
             android:textColor="@android:color/white"
-            android:text="还原"/>
+            android:text="滤镜"/>
     </LinearLayout>
 
     <TextView
