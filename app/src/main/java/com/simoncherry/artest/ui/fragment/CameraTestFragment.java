@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -27,6 +28,7 @@ import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -77,6 +79,8 @@ public class CameraTestFragment extends AExampleFragment {
     private AutoFitTextureView textureView;
     private TrasparentTitleView mScoreView;
     private ImageView ivDraw;
+    private Button btnBuildModel;
+    private Button btnShowFilter;
     private ProgressDialog mDialog;
     private CustomBottomSheet mFilterSheet;
     private RecyclerView mRvFilter;
@@ -157,8 +161,8 @@ public class CameraTestFragment extends AExampleFragment {
         CheckBox checkShowModel = (CheckBox) view.findViewById(R.id.check_show_model);
         CheckBox checkLandMark = (CheckBox) view.findViewById(R.id.check_land_mark);
         CheckBox checkDrawMode = (CheckBox) view.findViewById(R.id.check_draw_mode);
-        Button btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
-        Button btnShowFilter = (Button) view.findViewById(R.id.btn_show_filter);
+        btnBuildModel = (Button) view.findViewById(R.id.btn_build_model);
+        btnShowFilter = (Button) view.findViewById(R.id.btn_show_filter);
 
         checkShowCrop.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -203,6 +207,8 @@ public class CameraTestFragment extends AExampleFragment {
         btnShowFilter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                btnBuildModel.setVisibility(View.GONE);
+                btnShowFilter.setVisibility(View.GONE);
                 mFilterSheet.show();
             }
         });
@@ -233,6 +239,14 @@ public class CameraTestFragment extends AExampleFragment {
         mFilterSheet.setContentView(sheetView);
         mFilterSheet.getWindow().findViewById(R.id.design_bottom_sheet)
                 .setBackgroundResource(android.R.color.transparent);
+        mFilterSheet.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        mFilterSheet.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                btnBuildModel.setVisibility(View.VISIBLE);
+                btnShowFilter.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private void initCamera() {

@@ -40,11 +40,14 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.MyViewHold
     @Override
     public void onBindViewHolder(MyViewHolder holder, final int position) {
         int index = mData.get(position);
-        holder.ivImg.setImageResource(R.mipmap.ic_launcher);
         String resName = "filter" + index;
-        int resId = mContext.getResources().getIdentifier(resName, "string", mContext.getPackageName());
-        String name = mContext.getString(resId);
+        int nameResId = mContext.getResources().getIdentifier(resName, "string", mContext.getPackageName());
+        String name = mContext.getString(nameResId);
         holder.tvName.setText(name);
+
+        resName = "filter_thumb_" + index;
+        int imgResId = mContext.getResources().getIdentifier(resName, "drawable", mContext.getPackageName());
+        holder.ivImg.setImageResource(imgResId);
 
         holder.layoutRoot.setOnClickListener(new View.OnClickListener() {
             @Override

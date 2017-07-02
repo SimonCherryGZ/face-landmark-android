@@ -34,7 +34,6 @@ import com.simoncherry.artest.nekocode.filter.CrackedFilter;
 import com.simoncherry.artest.nekocode.filter.CrosshatchFilter;
 import com.simoncherry.artest.nekocode.filter.EMInterferenceFilter;
 import com.simoncherry.artest.nekocode.filter.EdgeDetectionFilter;
-import com.simoncherry.artest.nekocode.filter.JFAVoronoiFilter;
 import com.simoncherry.artest.nekocode.filter.LegofiedFilter;
 import com.simoncherry.artest.nekocode.filter.LichtensteinEsqueFilter;
 import com.simoncherry.artest.nekocode.filter.MappingFilter;
@@ -143,26 +142,25 @@ public class MyCameraRenderer implements Runnable, TextureView.SurfaceTextureLis
 
         // Setup camera filters map
         cameraFilterMap.append(R.string.filter0, new OriginalFilter(context));
-        cameraFilterMap.append(R.string.filter1, new EdgeDetectionFilter(context));
-        cameraFilterMap.append(R.string.filter2, new PixelizeFilter(context));
-        cameraFilterMap.append(R.string.filter3, new EMInterferenceFilter(context));
-        cameraFilterMap.append(R.string.filter4, new TrianglesMosaicFilter(context));
-        cameraFilterMap.append(R.string.filter5, new LegofiedFilter(context));
-        cameraFilterMap.append(R.string.filter6, new TileMosaicFilter(context));
-        cameraFilterMap.append(R.string.filter7, new BlueorangeFilter(context));
-        cameraFilterMap.append(R.string.filter8, new ChromaticAberrationFilter(context));
-        cameraFilterMap.append(R.string.filter9, new BasicDeformFilter(context));
-        cameraFilterMap.append(R.string.filter10, new ContrastFilter(context));
-        cameraFilterMap.append(R.string.filter11, new NoiseWarpFilter(context));
-        cameraFilterMap.append(R.string.filter12, new RefractionFilter(context));
-        cameraFilterMap.append(R.string.filter13, new MappingFilter(context));
-        cameraFilterMap.append(R.string.filter14, new CrosshatchFilter(context));
-        cameraFilterMap.append(R.string.filter15, new LichtensteinEsqueFilter(context));
-        cameraFilterMap.append(R.string.filter16, new AsciiArtFilter(context));
-        cameraFilterMap.append(R.string.filter17, new MoneyFilter(context));
-        cameraFilterMap.append(R.string.filter18, new CrackedFilter(context));
-        cameraFilterMap.append(R.string.filter19, new PolygonizationFilter(context));
-        cameraFilterMap.append(R.string.filter20, new JFAVoronoiFilter(context));
+        cameraFilterMap.append(R.string.filter1, new AsciiArtFilter(context));
+        cameraFilterMap.append(R.string.filter2, new BasicDeformFilter(context));
+        cameraFilterMap.append(R.string.filter3, new BlueorangeFilter(context));
+        cameraFilterMap.append(R.string.filter4, new ChromaticAberrationFilter(context));
+        cameraFilterMap.append(R.string.filter5, new ContrastFilter(context));
+        cameraFilterMap.append(R.string.filter6, new CrackedFilter(context));
+        cameraFilterMap.append(R.string.filter7, new CrosshatchFilter(context));
+        cameraFilterMap.append(R.string.filter8, new EdgeDetectionFilter(context));
+        cameraFilterMap.append(R.string.filter9, new EMInterferenceFilter(context));
+        cameraFilterMap.append(R.string.filter10, new LegofiedFilter(context));
+        cameraFilterMap.append(R.string.filter11, new LichtensteinEsqueFilter(context));
+        cameraFilterMap.append(R.string.filter12, new MappingFilter(context));
+        cameraFilterMap.append(R.string.filter13, new MoneyFilter(context));
+        cameraFilterMap.append(R.string.filter14, new NoiseWarpFilter(context));
+        cameraFilterMap.append(R.string.filter15, new PixelizeFilter(context));
+        cameraFilterMap.append(R.string.filter16, new PolygonizationFilter(context));
+        cameraFilterMap.append(R.string.filter17, new RefractionFilter(context));
+        cameraFilterMap.append(R.string.filter18, new TileMosaicFilter(context));
+        cameraFilterMap.append(R.string.filter19, new TrianglesMosaicFilter(context));
         setSelectedFilter(selectedFilterId);
 
         // Create texture for camera preview
