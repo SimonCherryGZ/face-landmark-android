@@ -41,6 +41,7 @@ import io.realm.RealmList;
 
 public class ARFacePresenter implements ARFaceContract.Presenter {
     private final static String TAG = ARFacePresenter.class.getSimpleName();
+    public final static int NO_COLOR = 2333;
 
     private Context mContext;
     private ARFaceContract.View mView;
@@ -172,11 +173,12 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         List<Ornament> ornaments = new ArrayList<>();
         ornaments.add(getGlass());
         ornaments.add(getMoustache());
+        ornaments.add(getHeart());
         ornaments.add(getCatEar());
         ornaments.add(getTigerNose());
-        ornaments.add(getHeart());
-        ornaments.add(getVMask());
         ornaments.add(getCatMask());
+        ornaments.add(getPantherMask());
+        ornaments.add(getVMask());
         ornaments.add(getDevilMask());
         return ornaments;
     }
@@ -271,6 +273,17 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setOffset(0, -0.1f, -0.1f);
         ornament.setRotate(0, 0, 0);
         ornament.setColor(Color.DKGRAY);
+        return ornament;
+    }
+
+    private Ornament getPantherMask() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.panther_obj);
+        ornament.setImgResId(R.drawable.ic_panther_mask);
+        ornament.setScale(0.12f);
+        ornament.setOffset(0, -0.1f, 0.0f);
+        ornament.setRotate(0, 0, 0);
+        ornament.setColor(NO_COLOR);
         return ornament;
     }
 

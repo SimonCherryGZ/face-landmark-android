@@ -765,8 +765,10 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
                     mOrnament.setScale(ornament.getScale());
                     mOrnament.setPosition(ornament.getOffsetX(), ornament.getOffsetY(), ornament.getOffsetZ());
                     mOrnament.setRotation(ornament.getRotateX(), ornament.getRotateY(), ornament.getRotateZ());
-                    mOrnament.getMaterial().setColor(ornament.getColor());
-                    mOrnament.getMaterial().enableLighting(true);
+                    int color = ornament.getColor();
+                    if (color != ARFacePresenter.NO_COLOR) {
+                        mOrnament.getMaterial().setColor(color);
+                    }
                     mOrnament.setVisible(isOrnamentVisible);
                     mContainer.addChild(mOrnament);
 

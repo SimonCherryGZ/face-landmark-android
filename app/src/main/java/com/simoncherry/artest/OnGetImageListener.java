@@ -186,8 +186,8 @@ public class OnGetImageListener implements OnImageAvailableListener {
         }
 
         mRGBframeBitmap.setPixels(mRGBBytes, 0, mPreviewWdith, 0, 0, mPreviewWdith, mPreviewHeight);
-        Log.e("mRGBframeBitmap", "width: " + mRGBframeBitmap.getWidth());    // mRGBframeBitmap: width: 480
-        Log.e("mRGBframeBitmap", "height: " + mRGBframeBitmap.getHeight());  // mRGBframeBitmap: height: 320
+//        Log.i("mRGBframeBitmap", "width: " + mRGBframeBitmap.getWidth());    // mRGBframeBitmap: width: 480
+//        Log.i("mRGBframeBitmap", "height: " + mRGBframeBitmap.getHeight());  // mRGBframeBitmap: height: 320
 
         Matrix mtx = new Matrix();
         mtx.preScale(-1.0f, 1.0f);
@@ -293,7 +293,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
     private void handleRotation(VisionDetRet ret) {
         ArrayList<Float> rotateList = ret.getRotate();
         if (rotateList != null && rotateList.size() >= 3) {
-            Log.e("rotateList: ", rotateList.toString());
+            Log.i("rotateList: ", rotateList.toString());
             if (landMarkListener != null) {
                 float x = rotateList.get(0);
                 float y = rotateList.get(1);
@@ -321,7 +321,7 @@ public class OnGetImageListener implements OnImageAvailableListener {
     private void handleTransition(VisionDetRet ret) {
         ArrayList<Float> transList = ret.getTrans();
         if (transList != null && transList.size() >= 3) {
-            Log.e("transList: ", transList.toString());
+            Log.i("transList: ", transList.toString());
             if (landMarkListener != null) {
                 landMarkListener.onTransChange(transList.get(0), transList.get(1), transList.get(2));
             }
