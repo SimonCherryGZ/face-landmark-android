@@ -180,6 +180,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornaments.add(getPantherMask());
         ornaments.add(getVMask());
         ornaments.add(getDevilMask());
+        ornaments.add(getGasMask());
         return ornaments;
     }
 
@@ -295,6 +296,17 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setOffset(0, -0.15f, 0.0f);
         ornament.setRotate(0, 0, 0);
         ornament.setColor(0xff660000);
+        return ornament;
+    }
+
+    private Ornament getGasMask() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.gas_mask_obj);
+        ornament.setImgResId(R.drawable.ic_gas_mask);
+        ornament.setScale(0.11f);
+        ornament.setOffset(0, -0.2f, 0.0f);
+        ornament.setRotate(0, 0, 0);
+        ornament.setColor(0xff333333);
         return ornament;
     }
 }
