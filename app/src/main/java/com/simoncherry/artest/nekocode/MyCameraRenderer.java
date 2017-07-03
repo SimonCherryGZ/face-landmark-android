@@ -26,6 +26,7 @@ import android.view.TextureView;
 import com.simoncherry.artest.R;
 import com.simoncherry.artest.nekocode.filter.AsciiArtFilter;
 import com.simoncherry.artest.nekocode.filter.BasicDeformFilter;
+import com.simoncherry.artest.nekocode.filter.BeautyFilter;
 import com.simoncherry.artest.nekocode.filter.BlueorangeFilter;
 import com.simoncherry.artest.nekocode.filter.CameraFilter;
 import com.simoncherry.artest.nekocode.filter.ChromaticAberrationFilter;
@@ -161,6 +162,7 @@ public class MyCameraRenderer implements Runnable, TextureView.SurfaceTextureLis
         cameraFilterMap.append(R.string.filter17, new RefractionFilter(context));
         cameraFilterMap.append(R.string.filter18, new TileMosaicFilter(context));
         cameraFilterMap.append(R.string.filter19, new TrianglesMosaicFilter(context));
+        cameraFilterMap.append(R.string.filter20, new BeautyFilter(context));
         setSelectedFilter(selectedFilterId);
 
         // Create texture for camera preview

@@ -25,4 +25,5 @@
     <string name="filter17">Refraction</string>
     <string name="filter18">TileMosaic</string>
     <string name="filter19">TrianglesMosaic</string>
+    <string name="filter20">Beauty</string>
 </resources>

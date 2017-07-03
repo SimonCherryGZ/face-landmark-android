@@ -17,10 +17,6 @@ package com.simoncherry.artest.nekocode;
 
 import android.opengl.GLES20;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
-
 import javax.microedition.khronos.opengles.GL10;
 
 /**
@@ -43,9 +39,13 @@ public class RenderBuffer {
         // Generate and bind 2d texture
         GLES20.glActiveTexture(activeTexUnit);
         texId = MyGLUtils.genTexture();
-        IntBuffer texBuffer =
-                ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, texBuffer);
+
+        // No reason to specify any pixels as input data of texture attachment of FBO. by begeekmyfriend
+        // https://github.com/nekocode/CameraFilter/pull/17/commits/2160638bb17c82adcf22b2ad29a2d0703b81a151
+//        IntBuffer texBuffer =
+//                ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
+//        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, texBuffer);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
 
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);

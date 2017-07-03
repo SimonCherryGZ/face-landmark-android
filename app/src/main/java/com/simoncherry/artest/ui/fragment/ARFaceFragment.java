@@ -324,7 +324,7 @@ public class ARFaceFragment extends AExampleFragment implements ARFaceContract.V
     }
 
     private void initFilterSheet() {
-        for (int i=0; i<20; i++) {
+        for (int i=0; i<21; i++) {
             mFilters.add(i);
         }
 
