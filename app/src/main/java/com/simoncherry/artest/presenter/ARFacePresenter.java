@@ -181,6 +181,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornaments.add(getVMask());
         ornaments.add(getDevilMask());
         ornaments.add(getGasMask());
+        ornaments.add(getIronMan());
         return ornaments;
     }
 
@@ -307,6 +308,17 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornament.setOffset(0, -0.2f, 0.0f);
         ornament.setRotate(0, 0, 0);
         ornament.setColor(0xff333333);
+        return ornament;
+    }
+
+    private Ornament getIronMan() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.iron_man_obj);
+        ornament.setImgResId(R.drawable.ic_iron_man);
+        ornament.setScale(0.12f);
+        ornament.setOffset(0, -0.1f, 0.0f);
+        ornament.setRotate(0, 0, 0);
+        ornament.setColor(NO_COLOR);
         return ornament;
     }
 }
