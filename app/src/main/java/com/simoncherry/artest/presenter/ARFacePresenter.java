@@ -182,6 +182,7 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         ornaments.add(getDevilMask());
         ornaments.add(getGasMask());
         ornaments.add(getIronMan());
+        ornaments.add(getRingHat());
         return ornaments;
     }
 
@@ -315,8 +316,19 @@ public class ARFacePresenter implements ARFaceContract.Presenter {
         Ornament ornament = new Ornament();
         ornament.setModelResId(R.raw.iron_man_obj);
         ornament.setImgResId(R.drawable.ic_iron_man);
-        ornament.setScale(0.12f);
+        ornament.setScale(0.11f);
         ornament.setOffset(0, -0.1f, 0.0f);
+        ornament.setRotate(0, 0, 0);
+        ornament.setColor(NO_COLOR);
+        return ornament;
+    }
+
+    private Ornament getRingHat() {
+        Ornament ornament = new Ornament();
+        ornament.setModelResId(R.raw.ring_hat_obj);
+        ornament.setImgResId(R.drawable.ic_ring_hat);
+        ornament.setScale(0.12f);
+        ornament.setOffset(0, 0.2f, 0.0f);
         ornament.setRotate(0, 0, 0);
         ornament.setColor(NO_COLOR);
         return ornament;
